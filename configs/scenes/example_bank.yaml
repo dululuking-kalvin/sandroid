@@ -1,0 +1,121 @@
+# Example scene — a small-bank root exercising every V3 mode.
+#
+# Layout:
+#   ROOT (STANDARD)
+#   ├── card (DRILLDOWN) — ordinary "lost card" intent + special hook,
+#   │                      also penetrates into its children
+#   │   └── card_lost_flow (SEQUENTIAL) — single-child chain with on_complete:rules
+#   │       └── card_lost_confirm (MEMORY) — terminal, no children
+#   ├── transfer (BRANCHING) — hook-only, immediate-child search
+#   │   ├── transfer_domestic (STANDARD)
+#   │   └── transfer_cross_border (STANDARD)
+#   └── locations (extends common_locations)  # STANDARD + extendsEnumCategory
+#
+#   common_locations (ENUM) — reusable enumeration pool, not a scene itself
+
+root_id: root
+
+categories:
+  - id: root
+    name: ROOT
+    mode: STANDARD
+    intents:
+      - id: greeting
+        question: ["你好", "您好，请问有什么可以帮您"]
+        answer: "您好，这里是示例银行客服。"
+
+  - id: card
+    name: 信用卡业务
+    parent_id: root
+    mode: DRILLDOWN
+    intents:
+      - id: card_lost_report
+        question: ["我的卡丢了", "信用卡不见了"]
+        answer: "我们来帮您挂失。"
+      - id: card_hook
+        is_special: true
+        question: ["和信用卡有关的问题"]
+        follow_up: "ROOT->信用卡业务"
+
+  - id: card_lost_flow
+    name: 挂失流程
+    parent_id: card
+    mode: SEQUENTIAL
+    intents:
+      - id: card_lost_flow_hook
+        is_special: true
+        question: ["办理挂失"]
+        follow_up: "ROOT->信用卡业务->挂失流程"
+    on_complete:
+      type: rules
+      rules:
+        - when: "slots.urgency == 'high'"
+          intent: card_lost_expedite
+        - default: true
+          intent: card_lost_standard
+
+  - id: card_lost_confirm
+    name: 挂失确认
+    parent_id: card_lost_flow
+    mode: MEMORY
+    intents:
+      - id: card_lost_standard
+        question: []
+        answer: "已为您办理常规挂失，3个工作日补卡。"
+      - id: card_lost_expedite
+        question: []
+        answer: "已为您加急挂失，24小时补卡。"
+
+  - id: transfer
+    name: 转账
+    parent_id: root
+    mode: BRANCHING
+    intents:
+      - id: transfer_domestic_hook
+        is_special: true
+        question: ["境内转账"]
+        follow_up: "ROOT->转账->境内转账"
+      - id: transfer_cross_border_hook
+        is_special: true
+        question: ["跨境汇款", "境外转账"]
+        follow_up: "ROOT->转账->跨境转账"
+
+  - id: transfer_domestic
+    name: 境内转账
+    parent_id: transfer
+    mode: STANDARD
+    intents:
+      - id: transfer_domestic_info
+        question: ["境内转账手续费"]
+        answer: "行内免费，跨行按标准收取。"
+
+  - id: transfer_cross_border
+    name: 跨境转账
+    parent_id: transfer
+    mode: STANDARD
+    intents:
+      - id: transfer_cross_border_info
+        question: ["跨境转账多久到账"]
+        answer: "通常1-3个工作日。"
+
+  - id: locations
+    name: 网点查询
+    parent_id: root
+    mode: STANDARD
+    extends_enum_category: common_locations
+    intents:
+      - id: location_intro
+        question: ["我想查网点"]
+        answer: "请告诉我城市名。"
+
+  - id: common_locations
+    name: 城市枚举
+    parent_id: root
+    mode: ENUM
+    intents:
+      - id: loc_beijing
+        question: ["北京"]
+        answer: "北京有52家网点。"
+      - id: loc_shanghai
+        question: ["上海"]
+        answer: "上海有48家网点。"
