@@ -44,3 +44,6 @@ audit/
 .env
 .env.*
 !.env.example
+
+# Claude Code local state
+.claude/
