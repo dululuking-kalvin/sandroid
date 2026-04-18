@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 from sandroid import __version__
+from sandroid.api.routes import router as v1_router
 
 
 class HealthResponse(BaseModel):
@@ -18,6 +19,7 @@ def create_app() -> FastAPI:
     async def healthz() -> HealthResponse:
         return HealthResponse(status="ok", version=__version__)
 
+    app.include_router(v1_router)
     return app
 
 
