@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+
+# venvs / uv
+.venv/
+venv/
+.uv-cache/
+
+# Tooling caches
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project
+/var/sandroid/
+audit/
+*.onnx
+*.wav
+*.pcm
+*.opus
+!tests/**/fixtures/*.wav
+
+# Secrets / local config
+.env
+.env.*
+!.env.example

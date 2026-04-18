@@ -1,0 +1,4538 @@
+NLP Voice Engine API Manual
+
+      NLP Voice Engine API Manual
+
+                        Version 1.0.0 (rev 1)
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 1 of 99
+NLP Voice Engine API Manual
+
+
+
+                                                                                                    
+  1                            1.0.0 (rev 1)                                                       2020.09.20
+  2
+  3
+  4
+  5
+  6
+  7
+  8
+  9
+ 10
+ 11
+ 12
+ 13
+ 14
+ 15
+ 16
+ 17
+ 18
+ 19
+ 20
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 2 of 99
+NLP Voice Engine API Manual
+
+                             
+
+       ............................................................................................................ 7
+      API.................................................................................. 8
+       .................................................................................................. 9
+3.1   .................................................................................................... 13
+3.2   ................................................................................................ 13
+3.3    ............................................................................................................ 15
+3.4    ............................................................................................................ 17
+3.5   .................................................................................................... 19
+3.6    ........................................................................................... 20
+3.7   .................................................................................................... 20
+3.8    .................................................................. 21
+3.9    ....................................................................................... 22
+3.10   ........................................................................................... 23
+3.11   ............................................................................................................ 24
+3.12  .................................................................................................... 26
+3.13   ....................................................................................... 26
+3.14   ........................................................................................... 27
+3.15  "faq_id" .................................................................................................. 28
+3.16   ............................................................................................................ 29
+3.17  ............................................................................... 29
+3.18  ................................................................................................ 30
+3.19   ....................................................................................... 30
+3.20   .................................................................................................................... 31
+3.21   .................................................................................................................... 32
+3.22   .................................................................................................................... 33
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 3 of 99
+NLP Voice Engine API Manual
+
+3.23   ............................................................................................................ 34
+
+3.24   ............................................................................................................ 35
+
+3.25   ............................................................................................................ 35
+
+3.26   ............................................................................................................ 35
+
+3.27   .................................................................................................................... 37
+
+3.28   .................................................................................................................... 38
+
+      ...................................................................................... 38
+
+4.1   ........................................................................................................ 40
+
+4.2   ....................................................................... 42
+
+4.3   "expectedFaqid" ................................................................... 44
+
+4.4   "expectedFaqid"........................................................................ 46
+
+4.5    .......................................................... 46
+
+       ................................................................................................ 48
+
+5.1   ........................................................................................................ 49
+
+5.2   ........................................................................................................ 50
+
+5.3   () .................................................................... 46
+
+5.4    ............................................................................................................ 54
+
+5.5    ............................................................................................................ 54
+
+5.6    ............................................................................... 55
+
+5.7   .................................................................................................... 56
+
+5.8   ........................................................................... 57
+
+5.9    .......................................................... 57
+
+      ............................................................................................. 58
+
+6.1   ............................................................................... 58
+
+6.2   ................................................................................................ 59
+
+6.3    ............................................................................................................ 60
+
+6.4    ............................................................................................................ 62
+
+6.5    ............................................................................................................ 64
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 4 of 99
+NLP Voice Engine API Manual
+
+      .................................................................................................... 66
+
+7.1    .................................................................. 66
+
+7.2   .................................................................................................... 67
+
+7.3    ............................................................................... 67
+
+7.4    ............................................................................................................ 68
+
+7.5    ............................................................................................................ 68
+
+7.6    ....................................................................................... 69
+
+7.7   ................................................................................................ 70
+
+7.8   response................................................................................................. 71
+
+7.9   response ............................................................................ 72
+
+7.10  response ......................................................................................................... 73
+
+7.11  response ......................................................................................................... 73
+
+7.12  response .................................................................................... 73
+
+7.13  .................................................. 74
+
+7.14   ......................................... 75
+
+7.15   .............................................................. 76
+
+7.16   .............................................................. 76
+
+      .................................................................................................... 77
+
+8.1   ................................................................................................ 77
+
+8.2   .................................................................................................... 78
+
+8.3    ........................................................................................................ 79
+
+8.4    ........................................................................................................ 79
+
+8.5   ........................................................................................................ 80
+
+8.6   ........................................................................................................ 80
+
+8.7   ............................................................................... 81
+
+      ............................................................................................. 82
+
+9.1    ................................................................................................................ 82
+
+9.2   Category Switching................................................................................ 84
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 5 of 99
+NLP Voice Engine API Manual
+
+       :  ................................................................................................................ 87
+
+:  ................................................................................................................ 89
+
+: VAD .............................................................................. 90
+
+: .................................................................................................... 93
+
+1.   ................................................................................... 93
+
+2.   ............................................................................................................ 94
+
+3.   ............................................................................................................ 97
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 6 of 99
+NLP Voice Engine API Manual
+
+ 
+
+ API 
+         · 
+         · 
+         · 
+         · 
+          · 
+          · 
+          · 
+
+
+     · NLP Engine  Cloud  Application Developer
+     · URLhttp://<Server_Address>:<Server_Port#>Server_Address
+           Server_Port#Application Developerhttps, URL
+           https://<Server_Address>:<Server_Port#>
+            /faq/search/allServer_Addressnlp.ts.comPort# 12345URL
+                http:// nlp.ts.com:12345/faq/search/allhttps, URL
+                : https:// nlp.ts.com:12345/faq/search/all
+     ·  NLP Engine  Web UI Google Chrome
+     ·  UTF8,  BIG5  GB  CSV , 
+            Notepad++,  UTF8   windows  notepad  UTF8 ,
+           windows  csv , 
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 7 of 99
+NLP Voice Engine API Manual
+
+  API 
+
+NLP Engine, /login, 
+
+,  , , ,  :
+
+,  , 
+User Role,  ROLE_ADMIN, ROLE_USER ROLE_ADMIN
+/api/faq/clear/api/response/clearAPI, , 
+API
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 8 of 99
+NLP Voice Engine API Manual
+
+ 
+
+ENGINE 
+
+
+                             
+
+ (Standard)                  ,  ROOT 
+
+                             (), 
+
+                              (question_id), 
+
+                              , (followUp)
+
+                              (followUp), 
+
+                             
+
+                             ,  
+
+                             , , 
+
+                             (), 
+
+(Enum)                       , 
+
+                             (),  
+
+                             
+
+                             , 
+
+(Questionnaire_Branching)  , :
+
+                             ------
+
+                             : 
+
+                             :
+                             ?
+                             1. ()
+                             2. ()
+
+                             :
+                             ?
+                             1. ()
+                             2. ()
+                             3.  ()
+
+                             
+                             ?
+                             1. ()
+                             2. ()
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 9 of 99
+NLP Voice Engine API Manual
+
+                                         3. ()
+
+  -------
+
+  , "followUp"
+  , , 
+  , 
+
+  , (
+  ),  
+  , , 
+  , , 
+  , , 
+
+  
+
+  , 
+
+(Questionnaire_Stepping)  , :
+
+  -----
+  : 
+
+   ?
+
+   ?
+
+   ?
+
+   ?
+  ------
+
+  , , , 
+  ,  followUp 
+  , 
+
+   
+  , , , 
+  , , 
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 10 of 99
+NLP Voice Engine API Manual
+
+                              
+
+                             
+
+(Drilldown)                  , 
+
+                             , 
+
+                             , , 
+
+                              
+
+                             , 
+
+(Memory)                     , 
+
+                             
+
+                             
+
+                             , 
+
+                             
+
+                              faqid  questionId
+
+                              faqid  questionId 
+
+                             
+
+                              Report  Expected Faqid 
+
+                             
+
+                             
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 11 of 99
+NLP Voice Engine API Manual
+
+
+
+                                                                                                   
+                                                                                                   
+                         
+
+
+(,                                                                                                 
+)
+
+
+
+(,                                                                                                 
+)                                                                                                  
+
+
+
+
+(, 
+
+
+
+)
+
+ QUERY API                                                                                         
+                                                                                                   
+,                     ,      ,                                                                     
+                                                                                                   
+     ,                   (   
+              extend         
+              s          )   
+              catego         
+              ry 
+              
+              
+
+     
+
+     
+
+     
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 12 of 99
+NLP Voice Engine API Manual
+
+, (Extends Category), 
+
+,  , 
+, , 
+, ,  ,
+,  , 
+, (Extends Category),
+,  API , 
+
+
+,  API  API 
+
+3.1 
+
+URL  /api/category/all
+
+HTTP
+                    Get
+
+Method
+
+     
+
+     JSON 
+
+     
+
+     [
+        {
+            "id": 0,
+            "name": "ROOT",
+            "parentid": 0,
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 13 of 99
+NLP Voice Engine API Manual
+                             "description": null,
+                             "switching": null,
+                             "extendsEnumCategory": null,
+                             "faq": null,
+                             "mode": "STANDARD",
+                             "validEnumAttach": true
+
+                          }
+                      ]
+
+3.2 
+
+URL  /api/category/<category_id>
+
+HTTP
+                    Get
+
+Method
+
+     <category_id>, 
+     "categorypath"
+
+     <category_id>:
+
+     · Category Path"ROOT->S1", "->"
+
+     ·  ID Category ID
+
+     JSON 
+
+     
+
+     [
+        {
+
+           "categoryid": 1,
+
+            "name": "ROOT",
+            "parentid": 0,
+             "categorypath": "ROOT" },
+        {
+
+           "categoryid": 2,
+
+            "name": " S1",
+            "parentid": 1,
+             "categorypath": "ROOT->S1" }
+     ]
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 14 of 99
+NLP Voice Engine API Manual
+
+3.3 
+
+URL     /api/category/add
+
+HTTP    Post
+Method
+
+        
+
+        JSON 
+
+        - name:  UTF8 , 
+
+        - parentid:  ID , 
+            ()
+
+        - description:  UTF8 , 
+
+        - mode: , :
+
+              · STANDARD ()
+
+              · ENUM ()
+
+              · QUESTIONNAIRE_STEPPING()
+
+              · QUESTIONNAIRE_BRANCHING()
+
+              · DRILLDOWN()
+
+              · MEMORY()
+
+        - faq:  array of hash, null 
+              , 
+              id  FAQID, 
+
+        - extendsEnumCategory:  array of hash array of hash
+            ,  id, name, parentid, description, mode, faq,
+            extendsEnumCategory, "mode":"ENUM", 
+            
+
+        
+
+        {
+           "name": "Category Name",
+           "parentid": "2",
+           "description": "Category Desc",
+           "faq": null
+           "mode": "STANDARD"
+           "extendsEnumCategory":null
+
+        }
+
+        
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 15 of 99
+NLP Voice Engine API Manual
+
+  {
+
+     "id": 6,
+
+     "name": "S1",
+
+     "parentid": 1,
+
+     "description": null,
+
+     "switching": null,
+
+     "extendsEnumCategory": {
+
+         "id": 5,
+
+         "name": "E",
+
+         "parentid": 1,
+
+         "description": null,
+
+         "switching": null,
+
+         "extendsEnumCategory": null,
+
+         "faq": null,
+
+         "mode": "ENUM"
+
+     },
+
+     "faq": {
+
+         "id": "S1",
+
+         "categoryid": 1,
+
+         "question": "S1",
+
+         "answer": "S1",
+
+         "attachments": []
+
+     },
+
+     "mode": "QUESTIONNAIRE_STEPPING"
+
+     }
+
+  JSON 
+
+         - MESSAGE:  Category ID
+
+  
+
+  {
+   "MESSAGE": 16,
+   "STATUS": true
+
+  }
+
+  
+
+  {
+     "STATUS": false,
+     "MESSAGE": "DUPLICATE_CATEGORY_NAME:S1"
+
+  }
+
+  
+
+  {
+
+     "MESSAGE": "PARENT_NOT_FOUND",
+
+     "STATUS": false
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 16 of 99
+NLP Voice Engine API Manual
+
+                   }
+
+3.4 
+
+URL     /api/category/update
+
+HTTP    Post
+Method
+
+        
+
+        JSON 
+
+        - id:  category id,  id  id  update,
+             id 
+
+        - name:  UTF8 , 
+
+        - parentid:  ID , 
+            
+
+        - description:  UTF8 , 
+
+        - mode: , :
+
+              · STANDARD ()
+
+              · ENUM ()
+
+              · QUESTIONNAIRE_STEPPING()
+
+              · QUESTIONNAIRE_BRANCHING()
+
+              · DRILLDOWN()
+
+              · MEMORY()
+
+        - faq:  array of hash, null 
+              , 
+              id  FAQID, ...
+
+        - extendsEnumCategory:  array of hash array of hash
+            ,  id, name, parentid, description, mode, faq,
+            extendsEnumCategory, "mode":"ENUM", 
+            
+
+         id , ,  null ,  API 
+        , /api/category/get/, 
+        ,  null value
+
+        
+
+        {
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 17 of 99
+NLP Voice Engine API Manual
+                          "id": "4",
+                          "name": "Category Name",
+                          "parentid": "2",
+                          "description": "Category Desc",
+                          "faq": null
+                          "mode": "STANDARD"
+                          "extendsEnumCategory":null
+
+                       }
+
+                   
+
+  {
+     "id": 6,
+     "name": "S1",
+     "parentid": 1,
+     "description": null,
+     "switching": null,
+     "extendsEnumCategory": {
+         "id": 5,
+         "name": "E",
+         "parentid": 1,
+         "description": null,
+         "switching": null,
+         "extendsEnumCategory": null,
+         "faq": null,
+         "mode": "ENUM"
+     },
+     "faq": {
+         "id": "S1",
+         "categoryid": 1,
+         "question": "S1",
+         "answer": "S1",
+         "attachments": []
+     },
+     "mode": "QUESTIONNAIRE_STEPPING",
+     "followUp": "ROOT->S1"
+
+  }
+
+  JSON 
+
+     - MESSAGE:  Category ID
+
+  
+
+  {
+
+     "STATUS": true,
+
+     "MESSAGE": 16
+
+  }
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 18 of 99
+NLP Voice Engine API Manual
+
+                   
+                 {
+
+                     "MESSAGE": "ID_NOT_FOUND",
+                     "STATUS": false
+                 }
+
+3.5 
+
+URL  /api/category/del/<category_id>
+
+HTTP
+                   Get
+
+Method
+
+     <category_id>
+      400 
+
+     <category_id>:
+     · Category Path"ROOT->Category One", "->"
+
+     ·  ID Category ID
+
+     · Category Name
+
+     JSON 
+
+      API 
+     ,  API , 
+      ,  error 400
+
+     
+
+     {
+        "id": 16,
+        "name": "Test Category 1",
+        "parentid": 2,
+        "description": "Test Category1",
+        "faq":
+        {
+            "id": "Test Category 1",
+            "categoryid": 2,
+            "question": "Test Category Question",
+            "answer": "Test Category Question",
+            "attachments": [ ]
+        },
+        "mode": "DRILLDOWN"
+
+     }
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 19 of 99
+NLP Voice Engine API Manual
+
+3.6 
+
+URL  /api/category/del/<category_id>/recursive
+
+HTTP
+                   Get
+
+Method
+
+     <category_id>, 
+     
+
+     <category_id>:
+
+     · Category Path"ROOT->Category One", "->"
+     ·  ID Category ID
+     · Category Name
+
+     JSON 
+     , 
+
+     
+
+     {
+        id: 9,
+        name: "test1",
+        parentid: 8,
+        description: "test",
+        extendsEnumCategory: null,
+        faq: null,
+        mode: "STANDARD"
+
+     }
+
+3.7 
+
+URL  /api/category/get/<category_id>
+
+HTTP
+                   Get
+
+Method
+
+     <category_id>
+
+     <category_id>:
+
+     · Category Path"ROOT->Category One", "->"
+     ·  ID Category ID
+
+     · Category Name
+
+     JSON 
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 20 of 99
+NLP Voice Engine API Manual
+
+                   
+
+                     {
+                        "id": 16,
+                        "name": "Test Category 1",
+                        "parentid": 2,
+                        "description": "Test Category1",
+                        "faq":
+                        {
+                            "id": "Test Category 1",
+                            "categoryid": 2,
+                            "question": "Test Category Question",
+                            "answer": "Test Category Question",
+                            "attachments": [ ]
+                        },
+                        "mode": "DRILLDOWN"
+
+                     }
+
+3.8 
+
+URL  /api/category/get/<category_id>/extended
+
+HTTP
+                   Get
+
+Method
+
+     <category_id>
+     
+
+     <category_id>:
+
+     · Category Path"ROOT->Category One", "->"
+     ·  ID Category ID
+
+     · Category Name
+
+     JSON 
+
+     <category_id>http  404
+
+     
+
+     {
+        "id": 135,
+        "name": "STEPPING_1",
+        "parentid": 133,
+        "description": null,
+        "switching": null,
+        "extendsEnumCategory": {
+            "id": 137,
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 21 of 99
+NLP Voice Engine API Manual
+                              "name": "ENUM",
+                              "parentid": 133,
+                              "description": null,
+                              "switching": null,
+                              "extendsEnumCategory": null,
+                              "faq": null,
+                              "mode": "ENUM"
+
+                          },
+                          "faq": {
+
+                              "id": "STEPPING_1_FAQ",
+                              "categoryid": 133,
+                              "question": "STEPPING_1_Q",
+                              "answer": "STEPPING_1_A",
+                              "attachments": []
+                          },
+                          "mode": "QUESTIONNAIRE_STEPPING",
+                          "followUp": "ROOT->STEPPING_1"
+                       }
+
+3.9 
+
+URL  /api/category/list/<category_id>/sub
+
+HTTP
+                   Get
+
+Method
+
+     <category_id>
+     
+
+     <category_id>:
+
+     · Category Path"ROOT->Category One", "->"
+
+     ·  ID Category ID
+
+     · Category Name
+
+     JSON 
+
+     <category_id>http  404
+
+     
+
+     [
+        {
+            "id": 134,
+            "name": "STANDARD",
+            "parentid": 133,
+            "description": null,
+            "switching": null,
+            "extendsEnumCategory": null,
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 22 of 99
+NLP Voice Engine API Manual
+                              "faq": null,
+                              "mode": "STANDARD"
+
+                          },
+                          {
+
+                              "id": 135,
+                              "name": "STEPPING_1",
+                              "parentid": 133,
+                              "description": null,
+                              "switching": null,
+                              "extendsEnumCategory": {
+
+                                  "id": 137,
+                                  "name": "ENUM",
+                                  "parentid": 133,
+                                  "description": null,
+                                  "switching": null,
+                                  "extendsEnumCategory": null,
+                                  "faq": null,
+                                  "mode": "ENUM"
+                              },
+                              "faq": {
+                                  "id": "STEPPING_1_FAQ",
+                                  "categoryid": 133,
+                                  "question": "STEPPING_1_Q",
+                                  "answer": "STEPPING_1_A",
+                                  "attachments": []
+                              },
+                              "mode": "QUESTIONNAIRE_STEPPING"
+                          }
+
+                       ]
+
+3.10 
+
+URL  /api/category/list/<category_id>/allsub
+
+HTTP
+                   Get
+
+Method
+
+     <category_id>
+     
+
+     <category_id>:
+
+     · Category Path"ROOT->Category One", "->"
+
+     ·  ID Category ID
+
+     · Category Name
+
+     JSON 
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 23 of 99
+NLP Voice Engine API Manual
+
+                   <category_id>http  404
+
+        
+
+        [
+           {
+               "id": 134,
+               "name": "STANDARD",
+               "parentid": 133,
+               "description": null,
+               "switching": null,
+               "extendsEnumCategory": null,
+               "faq": null,
+               "mode": "STANDARD"
+           },
+           {
+               "id": 135,
+               "name": "STEPPING_1",
+               "parentid": 133,
+               "description": null,
+               "switching": null,
+               "extendsEnumCategory": {
+                  "id": 137,
+                  "name": "ENUM",
+                  "parentid": 133,
+                  "description": null,
+                  "switching": null,
+                  "extendsEnumCategory": null,
+                  "faq": null,
+                  "mode": "ENUM"
+               },
+               "faq": {
+                  "id": "STEPPING_1_FAQ",
+                  "categoryid": 133,
+                  "question": "STEPPING_1_Q",
+                  "answer": "STEPPING_1_A",
+                  "attachments": []
+               },
+               "mode": "QUESTIONNAIRE_STEPPING"
+           }
+
+        ]
+
+3.11 
+
+URL     /api/category/duplicate
+
+HTTP    Post
+Method
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 24 of 99
+NLP Voice Engine API Manual
+
+  
+
+  JSON 
+
+  - oldQid: "ROOT->A->B"
+
+  - newQid: "ROOT->A->B"
+      
+
+  - faqidPrefix (optional):  UTF8  Faqid 
+
+  - faqidSuffix (optional):  UTF8  Faqid 
+
+   faqidPrefix  faqidSuffix 
+
+  
+
+  {
+     "oldQid": "ROOT->TEST",
+     "newQid": "ROOT->DUP1->DUP2->TEST",
+     "faqidPrefix": "DUP1_",
+     "faqidSuffix": "new"
+
+  }
+
+  JSON 
+
+  - MESSAGE: 
+
+  - RESULT: 
+
+  - STATUS: true  false
+
+  
+
+  {
+     "MESSAGE": "DONE",
+     "RESULT": [
+         {
+            "id": 5,
+            "name": "TEST",
+            "parentid": 4,
+            "description": null,
+            "switching": null,
+            "extendsEnumCategory": null,
+            "faq": null,
+            "mode": "STANDARD"
+         }
+     ],
+     "STATUS": true
+
+  }
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 25 of 99
+NLP Voice Engine API Manual
+
+3.12 
+
+URL  /api/faq/search/text/<search_text>
+
+HTTP
+                    Get
+
+Method
+
+     <search_text>, 
+     JSON 
+
+     <search_text>:  UTF-8 
+
+     JSON 
+
+     
+
+     [
+        {
+            "id": 1101,
+            "categoryid": 3,
+            "question": "Question 1",
+            "answer": "Answer 1",
+            "haveChildren": false,
+            "sort": 999,
+            "faqTag": [],
+            "attachments":[]
+        }
+
+     ]
+
+3.13 
+
+URL  /api/faq/search/<category_id>
+
+HTTP
+                   Get
+
+Method
+
+     <category_id >(),  JSON 
+     
+
+     
+
+     :, 
+
+     :, 
+
+     :,
+
+     :()
+
+     : faq extends category  faq
+
+     :
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 26 of 99
+NLP Voice Engine API Manual
+
+                   <category_id>:
+
+     · Category Path"ROOT->Category One", "->"
+
+     ·  ID Category ID
+
+     · Category Name
+
+     JSON 
+
+     
+
+     [
+        {
+            "id": "D1",
+            "categoryid": 32,
+            "question": "D1",
+            "answer": "D1",
+            "attachments": []
+        }
+
+     ]
+
+3.14 
+
+URL  /api/faq/get/<category_id>
+
+HTTP
+                   Get
+
+Method
+
+     ,  JSON 
+     
+
+     <category_id>:
+
+     · Category Path"ROOT->Category One", "->"
+
+     ·  ID Category ID
+
+     · Category Name
+
+     JSON 
+
+     
+
+     [
+        {
+            "id": "D1",
+            "categoryid": 32,
+            "question": "D1",
+            "answer": "D1",
+            "attachments": []
+        }
+
+     ]
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 27 of 99
+NLP Voice Engine API Manual
+
+3.15 "faq_id"
+
+URL  /api/faq/id/<faq_id>
+
+HTTP
+                   Get
+
+Method
+
+     <faq_id>
+     
+
+     <faq_id>:  UTF-8 
+
+     JSON 
+
+     
+
+     {
+        "id": "1",
+        "categoryid": 33,
+        "question": "1",
+        "answer": "1",
+        "attachments": [{
+               "id": 11,
+               "filename": "test.wav"
+            }]
+
+     }
+
+     
+
+     {
+        "id": "S2",
+        "categoryid": 38,
+        "question": "S2",
+        "answer": "S2",
+        "attachments": [],
+        "linkedCategory": {
+            "id": 39,
+            "name": "S2",
+            "parentid": 38,
+            "description": null,
+            "switching": null,
+            "extendsEnumCategory": null,
+            "faq": {
+               "id": "S2",
+               "categoryid": 38,
+               "question": "S2",
+               "answer": "S2",
+               "attachments": [{
+               "id": 11,
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 28 of 99
+NLP Voice Engine API Manual
+                                  "filename": "123.wav"
+
+                              }]
+                              },
+                              "mode": "QUESTIONNAIRE_STEPPING"
+                          },
+                          "linkedFollowUp": "ROOT->S1->S2"
+                       }
+
+3.16 
+
+URL  /api/faq/all
+
+HTTP
+                  Get
+
+Method
+
+     
+
+     JSON 
+
+     
+
+     [
+        {
+            "id": "1",
+            "categoryid": 33,
+            "question": "1",
+            "answer": "1",
+            "attachments": []
+        }
+
+     ]
+
+3.17 
+
+URL  /api/faq/category
+
+HTTP
+                  Get
+
+Method
+
+     
+
+     JSON 
+
+     
+
+     [
+        {
+            "id": "DRILLDOWN_FAQ",
+            "categoryid": 32,
+            "question": "DRILLDOWN_FAQ",
+            "answer": "DRILLDOWN_FAQ",
+            "attachments": []
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 29 of 99
+NLP Voice Engine API Manual
+                          }
+
+                       ]
+
+3.18 
+
+URL  /api/faq/standard
+
+HTTP
+                  Get
+
+Method
+
+     , 
+
+     JSON 
+
+     
+
+     [
+        {
+            "id": "1",
+            "categoryid": 33,
+            "question": "1",
+            "answer": "1",
+            "attachments": []
+        }
+
+     ]
+
+3.19 
+
+URL  /api/faq/all/extended
+
+HTTP
+                  Get
+
+Method
+
+     
+
+     JSON 
+
+     
+
+     [
+        {
+            "id": "1",
+            "categoryName": "A",
+            "parentCategoryid": 32,
+            "categoryid": 33,
+            "answer": "1",
+            "attachments": [],
+            "question": "1",
+            "parentCategoryName": "ROOT"
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 30 of 99
+NLP Voice Engine API Manual
+                          }
+
+                       ]
+
+3.20 
+
+URL     /api/faq/add
+
+HTTP    Post
+Method
+
+         JSON , 
+
+        JSON 
+
+        - id:  UTF8 , 
+
+        - question:  UTF8 , ()
+
+        - answer:  UTF8 , ()
+
+        - category(optional):  UTF-8 
+
+        · Category Path"->"
+
+        ·  IDCategory ID
+
+        · Category Name
+
+         category ROOT 
+
+        
+
+        [
+           {
+               "id":"1",
+               "question":"xxxxxx",
+               "answer":"?",
+               "responseId":"1234",
+               "category": "ROOT"
+           }
+
+        ]
+
+        JSON 
+
+        
+
+        [
+           {
+               "faqId":"99",
+               "responseId":"1234"
+           }
+
+        ]
+        
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 31 of 99
+NLP Voice Engine API Manual
+                       [
+                          {
+                              "faqId":"99"
+                          }
+                       ]
+
+     
+
+     [
+        {
+            "STATUS": "DUPLICATED_ID",
+            "DETAIL": {
+               "id": "",
+               "question": " xxxxxx",
+               "answer": "?",
+               "category": "ROOT"
+            }
+        }
+
+     ]
+
+3.21 
+
+URL  /api/faq/del/<faq_id>
+
+HTTP
+                  Get
+
+Method
+
+     <faq_id>( QUESTIONNAIRE_STEPPING
+     QUESTIONNAIRE_BRANCHINGDRILLDOWN  FAQ 
+     )
+
+      JSON 
+
+     
+
+     {
+        "MESSAGE": {
+            "id": "111",
+            "categoryid": 24,
+            "question": "111",
+            "answer": "111",
+            "attachments": []
+        },
+        "STATUS": true
+
+     }
+
+     <faq_id>
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 32 of 99
+NLP Voice Engine API Manual
+                       
+
+                       {
+                          "MESSAGE": "FAQ_NOT_FOUND",
+                          "STATUS": false
+
+                       }
+
+3.22 
+
+URL     /api/faq/update
+
+HTTP    Post
+Method
+
+         JSON , 
+
+        JSON 
+
+        - id:  faq_id, , 
+
+        - question:  UTF8 , 
+
+        - answer:  UTF8 , 
+
+        - category(optional):  UTF-8 
+
+        · Category Path"->"
+
+        ·  IDCategory ID
+
+        · Category Name
+
+        
+
+        {"id":"wether0004","question":"wether0004","answer":"wether0004","category":"ROOT"}
+
+        JSON 
+
+        
+
+        {
+           "STATUS": true,
+           "MESSAGE": {
+               "id": "wether0004",
+               "question": "wether0004",
+               "answer": "wether0004",
+               "type": "faq",
+               "sort": 9999,
+               "categoryid": 1
+           }
+
+        }
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 33 of 99
+NLP Voice Engine API Manual
+
+         faq
+        {
+
+           "STATUS": false,
+           "MESSAGE": "FAQ_NOT_FOUND"
+        }
+
+3.23 
+
+URL     /api/faq/attach/<faq_id>
+
+HTTP    Post
+Method
+
+        , <faq_id>
+
+        File (form-data name="data")
+
+        ,  5MB
+
+        
+
+        {
+
+           "MESSAGE": 201,
+
+           "STATUS": true,
+
+           "filename": "201983162630p49t0_0_20190803-162630-default_rid-00132576.wav"
+
+        }
+
+        
+        {
+
+           "MESSAGE": "FILE_EMPTY",
+           "STATUS": false
+        }
+        
+        {
+           "MESSAGE": "CANNOT_UPLOAD",
+           "STATUS": false,
+           "filename": "201983162630p49t0_0_20190803-162630-default_rid-00132576.wav"
+        }
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 34 of 99
+NLP Voice Engine API Manual
+
+3.24 
+
+URL     /api/faq/attachment/delete/<attachment_id>
+
+HTTP
+                  Get
+
+Method
+
+        , <attachment_id>, 
+        
+
+         ID
+
+        {
+
+           "MESSAGE": 203,
+
+           "STATUS": true
+
+        }
+
+3.25 
+
+URL     /api/faq/attachment/<attachment_id>
+
+HTTP
+                  Get
+
+Method
+
+        , <attachment_id>, 
+        
+
+        
+
+         HTTP HEADER  Content-Disposition , :
+
+        Content-Disposition: attachment; filename="<filename>"
+
+3.26 
+
+URL        /api/faq/import/csv
+
+HTTP       Post
+Method
+
+            CSV 
+           
+
+           File (form-data name="data")
+
+           CSV
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 35 of 99
+NLP Voice Engine API Manual
+
+           JSON 
+
+           
+
+
+
+, :
+
+     ID        ACTION            CATEGORY     QUESTION                 ANSWER
+###......  ADD               "CAT1->CAT2-  ""           ""
+ ID        UPDATE            >CAT"                      
+           DELETE                          
+           VERIFY            ->
+                                              QUESTION                 ANSWER
+     ID        ACTION            CATEGORY  "            "
+           ADD               "->"          "            "
+111
+
+
+
+  MODE          ACTION       CATEGORY PATH       DESC                                              FAQID
+
+: -CAT "CAT1->CAT2-                              ""            ""
+
+                             >CAT"  (, 
+
+STANDARD                                                        FAQID 
+
+ENUM                         ->,                               
+
+QUESTIONNAIR                 "|"                               
+
+E_STEPPING                   ROOT->POS->                       DRILLDOWN,
+
+QUESTIONNAIR                 ->AN05|ROOT-                      QUESTIONNAIRE_STE
+
+E_BRANCHING                  >collection->FAQs-                PPING,
+
+DRILLDOWN                    >AN05                             QUESTIONNAIRE_BRA
+
+                                                               NCHING 
+
+                                                               FAQID, 
+
+                                                               null)
+
+
+
+  ID            ACTION       CATEGORY            QUESTION                                          ANSWER
+
+DRILLDOWN     CAT            "ROOT"              "Special FAQ "Special FAQ Question
+
+                                                 Question for  for Drilldown"
+
+                                                 Drilldown"
+
+
+
+CSV  ()
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 36 of 99
+NLP Voice Engine API Manual
+ID,ACTION,CATEGORY,QUESTION,ANSWER
+111,ADD,ROOT->Bank,"How many types of password there?","Three:Login Password, SMS Password and Certificate
+Password."
+112,UPDATE,ROOT->Bank,"The question need to update","The answer need to update"
+113,DELETE,ROOT->BANK, "The question need to delete" ,"The answer need to delete"
+
+
+CSV ID,ACTION,CATEGORY,QUESTION,ANSWER
+
+CSV  ()
+
+ID,ACTION,CATEGORY,QUESTION,ANSWER
+111,ADD,ROOT->Bank,"How many types of password there?", "ThreeLogin Password, SMS Password and Certificate
+Password."
+"QUESTIONNAIRE_STEPPING_CAT",ADD,"ROOT","Special FAQ Question for Questionnaire Stepping Here","Special FAQ
+Answer for Questionnaire Stepping Here"
+"QUESTIONNAIRE_BRANCHING_CAT",ADD,"ROOT","Special FAQ Question for Questionnaire Branching Here","Special
+FAQ Answer for Questionnaire Branching Here"
+"DRILLDOWN_CAT",ADD,"ROOT","Special FAQ Question for Drilldown Here","Special FAQ Question for Drilldown Here"
+#START OF CATEGORY
+#MODE,ACTION,PATH,DESC,FAQID
+STANDARD,CAT,"ROOT->STANDARD_CAT","Standard Desc",
+ENUM,CAT,"ROOT->ENUM_CAT","Enum Desc",
+QUESTIONNAIRE_STEPPING,CAT,"ROOT->QUESTIONNAIRE_STEPPING_CAT","Questionnaire Stepping
+Desc","QUESTIONNAIRE_STEPPING_CAT"
+QUESTIONNAIRE_BRANCHING,CAT,"ROOT->QUESTIONNAIRE_BRANCHING_CAT","Questionnaire Branching
+Desc","QUESTIONNAIRE_BRANCHING_CAT"
+DRILLDOWN,CAT,"ROOT->DRILLDOWN_CAT","Drilldown Desc","DRILLDOWN_CAT"
+
+3.27 
+
+URL  /api/export/faq
+
+HTTP
+                 Get
+
+Method
+
+     
+
+     CSV 
+
+3.28 
+
+URL  /api/faq/clear
+
+HTTP
+                 Get
+
+Method
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 37 of 99
+NLP Voice Engine API Manual
+
+  , 
+
+   {"STATUS": "OK"}
+
+ 
+
+       NLP Engine 
+
+
+      API, , 
+ , /chat.jsp /report.jsp,
+,/report.jspROLE_USER
+
+      /chat.jsp/report.jsp
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 38 of 99
+NLP Voice Engine API Manual
+
+/report.jsp, /chat.jspCSV""
+
+
+ API 
+
+4.1 
+
+URL     /api/response/search
+
+HTTP    Post
+Method
+
+        
+
+        JSON 
+
+        - from: MM/DD/YYYY  YYYY-MM-
+            DD'T'hh:mm:ss
+
+        - to: MM/DD/YYYY  YYYY-MM-
+            DD'T'hh:mm:ss)
+
+        - createFrom: MM/DD/YYYY  YYYY-MM-
+            DD'T'hh:mm:ss
+
+        - createTo: MM/DD/YYYY  YYYY-MM-
+            DD'T'hh:mm:ss)
+
+        - minConfidence: 0.01-1.0
+
+        - maxConfidence: 0.01-1.0
+
+        - includeTraining:  true/falsefaqid=0
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 39 of 99
+NLP Voice Engine API Manual
+
+                    - mismatch:  faqid  expectedFaqid true/false
+
+  - responseId: 
+
+  - question:  UTF8 , 
+
+  - questionId: questionId 
+
+  · "->""ROOT->A-
+      >B""%""%"
+      "ROOT->A->B%"
+
+  ·  ID
+
+  · 
+
+  - faqid:  ID
+
+  - expectedFaqid: ID
+
+  - pageSize: 
+
+  - page:  pageSize 
+
+  
+
+  {
+     "from": "11/23/2017'T'12:20:20",
+     "to": "12/29/2017'T'12:20:20",
+     "createFrom": "11/23/2017",
+     "createTo": "12/29/2017",
+     "minConfidence": "0.01",
+     "maxConfidence": "1.0",
+     "includeTraining": true,
+     "mismatch": false,
+     "responseId": "CHAT_1511958003305",
+     "question": "",
+     "questionId": "ROOT->A",
+     "faqid": "1",
+     "expectedFaqid": "1",
+     "pageSize": "5",
+     "page": "3"
+
+  }
+
+  JSON 
+
+  
+
+  [
+     {
+         "id": 23,
+         "responseId": "CHAT_1511958003305",
+         "questionId": "default",
+         "question": "123",
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 40 of 99
+NLP Voice Engine API Manual
+                                "faqid": "3",
+                                "expectedFaqid": null,
+                                "responder": null,
+                                "user": "user_account",
+                                "userip": "192.168.1.115",
+                                "createTimestamp": 1511958002000,
+                                "timestamp": 1511958003000,
+                                "confidence": 20
+
+                            }
+                         ]
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 41 of 99
+NLP Voice Engine API Manual
+
+4.2 
+
+URL     /api/response/search/count
+
+HTTP    Post
+Method
+
+         
+        
+
+        JSON 
+
+        - from: MM/DD/YYYY  YYYY-MM-
+            DD'T'hh:mm:ss
+
+        - to: MM/DD/YYYY  YYYY-MM-
+            DD'T'hh:mm:ss)
+
+        - createFrom: MM/DD/YYYY  YYYY-MM-
+            DD'T'hh:mm:ss
+
+        - createTo: MM/DD/YYYY  YYYY-MM-
+            DD'T'hh:mm:ss)
+
+        - minConfidence: 0.01-1.0
+
+        - maxConfidence: 0.01-1.0
+
+        - includeTraining:  true/falsefaqid=0
+
+        - mismatch:  faqid  expectedFaqid true/false
+
+        - responseId: 
+
+        - question:  UTF8 , 
+
+        - questionId: questionId 
+
+              · "->""ROOT->A-
+                  >B""%""%"
+                  "ROOT->A->B%"
+
+              ·  ID
+
+              · 
+
+        - faqid:  ID
+
+        - expectedFaqid: ID
+
+        
+
+        {
+           "from": "11/23/2017'T'12:20:20",
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 42 of 99
+NLP Voice Engine API Manual
+
+     "to": "12/29/2017'T'12:20:20",
+
+     "createFrom": "11/23/2017",
+
+     "createTo": "12/29/2017",
+
+     "minConfidence": "0.01",
+
+     "maxConfidence": "1.0",
+
+     "includeTraining": true,
+
+     "mismatch": false,
+
+     "responseId": "CHAT_1511958003305",
+
+     "question": "",
+
+     "questionId": "ROOT->A",
+
+     "faqid": "1",
+
+     "expectedFaqid": "1",
+
+  }
+
+  JSON 
+
+  - total: 
+      
+
+  
+
+  {
+     "total": 8
+
+  }
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 43 of 99
+NLP Voice Engine API Manual
+
+4.3 "expectedFaqid"
+
+URL     /api/response/update/expectedFaqid/response/update/expectedFaqid
+
+HTTP    Post
+Method
+
+        "expectedFaqid"
+
+        JSON 
+
+         Array of hash
+
+        - responseId:  ID
+
+        - expectedFaqid: ID
+
+        
+
+        [
+           {"responseId":"1133","expectedFaqid":"111"},
+           {"responseId":"1134","expectedFaqid":"234"}
+
+        ]
+
+        JSON 
+
+        {"MESSAGE": [],"STATUS": "OK"}
+
+        
+
+        {
+           "MESSAGE": [],
+           "STATUS": "OK"
+
+        }
+
+"expectedFaqid"
+/report.jsp"expectedFaqid"
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 44 of 99
+NLP Voice Engine API Manual
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 45 of 99
+NLP Voice Engine API Manual
+
+4.4 "expectedFaqid"
+
+URL  /api/response/del/faqid/<expectedFaqid>
+
+HTTP
+                  Get
+
+Method
+
+     "expectedFaqid"
+     
+
+     - expectedFaqid:  ID
+         "expectedFaqid""expectedFaqid""expectedFaqid"
+          4 
+
+         
+         "expectedFaqid"
+         "expectedFaqid"
+     JSON 
+
+     - MESSAGE: 
+
+     · <>: status  true
+
+     · "PARAMETER_TOO_SHORT":  4 (status  false)
+
+     · "NULL_OUTPUT":  FAQ(status  false)
+
+     - status: true  false
+
+     
+
+           {
+              "MESSAGE": 2,
+              "STATUS": true
+
+           }
+
+4.5 
+
+URL  /api/schedule/ml/remoteSyncJob/<responseDate>
+
+HTTP
+                  Get
+
+Method
+
+      RTSA () ML  rtsa 
+     "expectedFaqid" ML ml 
+
+      ML ml 
+     15  rtsa 
+
+     - responseDate: ml  rtsa >=<responseDate> response 
+
+     yyyymmdd20210331 00000000
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 46 of 99
+NLP Voice Engine API Manual
+
+                      yyyymmdd:hh:mm:ss
+
+   JSON 
+
+  - STATUS: true  false
+
+  
+
+  {
+     "STATUS": true
+
+  }
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 47 of 99
+NLP Voice Engine API Manual
+
+ 
+
+ NLP Engine 
+
+
+
+
+
+ API 
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 48 of 99
+NLP Voice Engine API Manual
+
+5.1 
+
+URL  /api/report/csv/export
+
+HTTP
+                  Get
+
+Method
+
+      faqid  expectedFaqid 
+     
+
+     File
+
+     CSV
+
+     "#timestamp" responseId  faqid expectedFaqid confidence  questionId                           question
+
+     <timestamp_1> <responseId_1> <faqid_1>   <expectedFaqid_1> <confidence_1>
+                 <questionid_1> <question_1>
+
+     <timestamp_2> <responseId_2> <faqid_2>   <expectedFaqid_2> <confidence_2>
+                 <questionid_2> <question_2>
+
+     ......
+
+     <Tab>
+
+     - timestamp: 
+
+     - responseId 
+
+     - faqid: () ID
+
+     - expectedFaqid: ()ID
+
+     - confidence: 0.0 ­ 100.0
+
+     - questionId: 
+
+     - question: 
+
+      CSV 
+
+     "#timestamp" responseId  faqid expectedFaqid confidence  questionId                           question
+
+     2015-12-02T14:59:05 1449039538130 1      1  100.0 default SIL cMan TeMan
+
+     2015-12-02T15:00:10 1449039603210 1      1  100.0 default Weng AHeng n SIL
+
+     ......
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 49 of 99
+NLP Voice Engine API Manual
+
+5.2 
+
+URL     /api/report/csv/export
+
+HTTP    POST
+Method
+
+         faqid  expectedFaqid 
+        
+
+        JSON 
+
+         Array of hash
+
+        
+
+        {
+           "responseId": "<responseId>",
+           "minConfidence": <minConfidence>,
+           "maxConfidence": <maxConfidence>,
+           "faqid": "<faqid>",
+           "expectedFaqid": "<expectedFaqid>",
+           "from": "<DateTime>",
+           "to": "<DateTime>",
+           "questionId": "<questionId>"
+
+        }
+
+        - responseId:                             
+            responseId       ,                responseId 
+            123456789,  responseId  4567,  responseId 
+              responseId  4567,  JSON 
+            : {"responseId": "4567"}
+
+        - minConfidence:  0-100  
+             50,  JSON : {"minConfidence": 50}
+
+        - maxConfidence:  0-100  
+             50,  JSON : {"minConfidence": 50}
+
+        - faqid: ,  (exact match)
+             ID
+
+        - expectedFaqid: ,  
+            (exact match) ID
+
+        - from: MM/DD/YYYY  YYYY-MM-
+            DD'T'hh:mm:ss
+
+        - to: MM/DD/YYYY  YYYY-MM-
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 50 of 99
+NLP Voice Engine API Manual
+
+                       DD'T'hh:mm:ss)
+
+  - createFrom: MM/DD/YYYY  YYYY-MM-
+      DD'T'hh:mm:ss
+
+  - createTo: MM/DD/YYYY  YYYY-MM-
+      DD'T'hh:mm:ss)
+
+  - questionId: questionId 
+
+          · "->""ROOT->A-
+              >B""%""%"
+              "ROOT->A->B%"
+
+          ·  ID
+
+          · 
+
+   2017  2  1  2017
+   2  2  faqid  expectedFaqid  CHECKACCTquestionId  ACCT 50
+   80 responseId "abc4567"
+
+  
+
+  {
+     "responseId":"abc4567",
+     "minConfidence": 50,
+     "maxConfidence": 80,
+     "faqid": "CHECKACCT",
+     "expectedFaqid": "CHECKACCT",
+     "from": "2017-02-01T00:00:00",
+     "to": "2017-02-02T23:59:59",
+     "questionId": "ACCT"
+
+  }
+
+  File
+
+  CSV
+
+   CSV 
+
+  "#timestamp" responseId              faqid expectedFaqid confidence  questionId                  question
+
+  <timestamp_1> <responseId_1> <faqid_1>   <expectedFaqid_1>           <confidence_1>
+              <questionid_1> <question_1>
+
+  <timestamp_2> <responseId_2> <faqid_2>   <expectedFaqid_2>           <confidence_2>
+              <questionid_2> <question_2>
+
+  ......
+
+  <Tab>
+
+  - timestamp: 
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 51 of 99
+NLP Voice Engine API Manual
+
+                  - responseId 
+
+        - faqid: () ID
+
+        - expectedFaqid: ()ID
+
+        - confidence: 0.0 ­ 100.0
+
+        - questionId: 
+
+        - question: 
+
+         CSV 
+
+        "#timestamp" responseId  faqid expectedFaqid confidence  questionId                        question
+
+        2015-12-02T14:59:05 1449039538130 1      1  100.0 default SIL cMan TeMan
+
+        2015-12-02T15:00:10 1449039603210 1      1  100.0 default Weng AHeng n SIL
+
+        ......
+
+5.3 ()
+
+URL     /api/report/csv/import   ( API: /train/csv)
+
+HTTP    Post
+Method
+
+         CSV  CSV 
+        1 faqid 2
+        3
+
+        File (form-data name="data")
+
+        CSV
+
+         CSV 
+
+        "#timestamp" responseId  faqid expectedFaqid confidence  questionId                        question
+
+        <timestamp_1> <responseId_1> <faqid_1>   <expectedFaqid_1> <confidence_1>
+                    <questionid_1> <question_1>  <expectedFaqid_2> <confidence_2>
+
+        <timestamp_2> <responseId_2> <faqid_2>
+                    <questionid_2> <question_2>
+
+        ......
+
+        <Tab>
+
+         CSV  1
+
+        "#timestamp" responseId  faqid expectedFaqid confidence  questionId                        question
+
+        02-12-2015 14:59:05 1449039538130 1      1  100.0 default Hello
+
+        02-12-2015 15:00:10 1449039603210 1      1  100.0 default How are you
+
+        ......
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 52 of 99
+NLP Voice Engine API Manual
+
+                   CSV  2
+
+  #timestamp responseId      faqid expectedFaqid confidence  questionId                            question
+
+  2015-12-02T14:59:05 1449039538130 1  1  100.0 default Hello
+
+  2015-12-02T15:00:10 1449039603210 1  1  100.0 default How are you
+
+  ......
+
+  
+
+  
+
+  {
+     "STATUS": "SUBMIT"
+
+  }
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 53 of 99
+NLP Voice Engine API Manual
+
+5.4 
+
+URL  /api/response/clear
+
+HTTP
+                  Get
+
+Method
+
+     , 
+
+      {"STATUS": "OK"}
+
+5.5 
+
+URL  /train/db
+
+HTTP
+                  Get
+
+Method
+
+     
+
+     JSON 
+
+     - STATUS: "SUBMIT""BUSY"
+         
+
+     
+
+     {"STATUS": "SUBMIT"}
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 54 of 99
+NLP Voice Engine API Manual
+
+5.6 
+
+URL     /train/db
+
+HTTP    Post
+Method
+
+        
+        
+
+         JSON 
+
+        - engineId: "->"
+            
+
+        
+
+        {"engineId": ["ROOT->A", "ROOT->B->C"]}
+
+        JSON 
+
+        - STATUS: "SUBMIT""BUSY"
+            
+
+        
+
+        {"STATUS": "SUBMIT"}
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 55 of 99
+NLP Voice Engine API Manual
+
+5.7 
+
+URL  /train/status
+
+HTTP
+                  Get
+
+Method
+
+     
+
+      JSON 
+
+     
+
+     {
+     "MESSAGE": null,
+     "NAME": "TrainingHelper",
+     "RESULT": "DONE",
+     "STATUS": "IDLE"
+     }
+
+     
+
+     {
+     "NAME": "TrainingHelper",
+     "STATUS": "RUNNING"
+     }
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 56 of 99
+NLP Voice Engine API Manual
+
+5.8 
+
+URL  /api/engine/sync
+
+HTTP
+                  Get
+
+Method
+
+      ML  RTSA 
+
+      ML 
+
+      JSON 
+
+     - MESSAGE: 
+
+     "BUSY"status  false
+
+     "DONE"status  true
+
+     - STATUS: true  false
+
+     
+
+     {
+        "id": "syncEngine",
+        "MESSAGE": "BUSY",
+        "STATUS": false
+
+     }
+
+5.9 
+
+URL  /api/async/status/syncEngine
+
+HTTP
+                  Get
+
+Method
+
+     
+
+      ML 
+
+      JSON 
+
+     - MESSAGE: "RUNNING"
+
+     - STATUS: true  false
+
+     
+
+     {
+        "MESSAGE": "RUNNING",
+        "STATUS": false
+
+     }
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 57 of 99
+NLP Voice Engine API Manual
+
+ 
+
+6.1 
+
+URL     /api/uaudio/file/<questionId>/<responseId>
+
+HTTP    Post
+Method
+
+        
+        
+
+        File (form-data name="data")
+
+        WAV  signed 16 bit pcm(raw) mono 
+
+        - questonId
+
+        · Category Path"->"
+
+        ·  IDCategory ID
+
+        · Category Name
+
+        - responseId
+            
+
+        JSON 
+
+        - responseId: 
+
+        - answer: 
+            · 
+            · "followUp"
+                 
+
+        - question: 
+            · 
+            · "followUp"
+                 
+
+        - confidence: 0.0 ­ 100.0
+        - followUp:
+
+            · 
+            · 
+        - y: 
+            · 
+            · "followUp"
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 58 of 99
+NLP Voice Engine API Manual
+
+                            
+                  
+
+                       [
+                          {
+                              "responseId": "006",
+                              "answer": "B",
+                              "confidence": "74.04",
+                              "question": "B",
+                              "followUp": "ROOT->D2",
+                              "y": "2"
+                          },
+                          {
+                              "responseId": "006",
+                              "answer": "A",
+                              "confidence": "25.96",
+                              "question": "A",
+                              "y": "1"
+                          }
+
+                       ]
+
+6.2 
+
+URL  /api/wav/<responseId>
+
+HTTP
+                  Get
+
+Method
+
+      responseId
+
+     - responseId
+         
+
+     WAV 
+
+      responseId 
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 59 of 99
+NLP Voice Engine API Manual
+
+ websocket 
+ websocket, URL ,  ws,  wss /api/uaudio/websocket
+,  URL  ws :
+
+     · URLws://<Server_Address>:<Server_Port#>Server_AddressServer_Port#
+           Application Developer, URL
+           wss://<Server_Address>:<Server_Port#>
+
+/api/uaudio/websocketServer_Addressnlp.ts.comPort# 12345URL
+ws:// nlp.ts.com:12345/api/uaudio/websocket, URL
+: wss:// nlp.ts.com:12345/api/uaudio/websocket
+
+ Signed 16bit PCM(Raw)(Mono),  8000  44100 
+  websocket RFC6455,
+
+6.3 
+
+URL      ws://{host}/api/uaudio/websocket
+
+Request  Websocket
+Method
+
+         
+
+         JSON 
+
+         - ACTION: "START", ACTION  START, STOP, CANCEL START
+              websocket 
+              STOP  CANCEL  websocket 
+
+             
+
+          Websocket STOP 
+         CANCEL  6.4   6.5 
+
+         - responseId: 
+             
+
+         - questionId: 
+
+         · Category Path"->"
+
+         ·  IDCategory ID
+
+         · Category Name
+
+          Websocket  questionId
+
+         - sampleRate:  8000 8000  44100
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 60 of 99
+NLP Voice Engine API Manual
+
+                  - Confidence-Threshold:  0-1
+                       
+
+  - N-Best-List-Length:  0 
+      
+
+   (VAD)
+  : VAD
+
+   1
+
+  {
+     "ACTION":"START",
+     "sampleRate":44100,
+     "responseId":"1234567",
+     "questionId":"<QUESTION_ID>",
+     "Confidence-Threshold":0.3,
+     "N-Best-List-Length":10
+
+  }
+
+   2
+
+  {
+     "ACTION":"START",
+     "sampleRate":44100,
+     "responseId":"1234567",
+     "questionId":["<QUESTION_ID_1>","<QUESTION_ID_2>"],
+     "Confidence-Threshold":0.3,
+     "N-Best-List-Length":10
+
+  }
+
+  JSON 
+
+  - STATUS: , STATUS "RECORDING",  STATUS ,
+        STATUS "FAIL", 
+
+  - ACTION: ACTION "START""STOP"
+       "CANCEL"
+      
+
+  - HANDLE:  HANDLE  0 
+
+  
+
+  {
+     "STATUS":"RECORDING",
+     "ACTION":"START",
+     "HANDLE": 4
+
+  }
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 61 of 99
+NLP Voice Engine API Manual
+
+6.4 
+
+URL      ws://{host}/api/uaudio/websocket
+
+Request  Websocket
+Method
+
+          6.3 
+         
+
+         JSON 
+
+         - ACTION: "STOP", ACTION  START, STOP, CANCEL
+              STOP 
+
+         
+
+         {"ACTION":"STOP"}
+
+         JSON 
+
+         - STATUS: "true""false"
+
+         - ACTION: "STOP"
+
+         - RESULT:  JASON 
+
+         - responseId: 
+             
+
+         - answer: 
+             · 
+             · "followUp"
+                  
+
+         - question: 
+             · 
+             · "followUp"
+                  
+
+         - confidence: 0.0 ­ 100.0
+         - followUp: 
+
+             · 
+             · 
+         - y: 
+             · 
+             · "followUp"
+
+                  
+         
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 62 of 99
+NLP Voice Engine API Manual
+                       {
+                          "STATUS":true,
+                          "ACTION":"STOP",
+                          "RESULT": "
+                          [
+                              {
+                                 "responseId":"123456",
+                                 "answer":"MANUALSERVICE",
+                                 "confidence":"8.33",
+                                 "question":"MANUALSERVICE",
+                                 "y":"MANUALSERVICE"
+                              },
+                              {
+                                 "responseId":"123457",
+                                 "answer":"AVAILABLECREDIT",
+                                 "confidence":"8.33",
+                                 "question":"AVAILABLECREDIT",
+                                 "y":"AVAILABLECREDIT"
+                              }
+                          ]
+                       }
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 63 of 99
+NLP Voice Engine API Manual
+
+6.5 
+
+URL     /api/uaudio/websocket
+
+HTTP    Websocket
+Method
+
+        
+        
+
+        JSON 
+
+        - ACTION: "CANCEL", ACTION  START, STOP, CANCEL
+             CANCEL 
+
+        
+
+        {"ACTION":"CANCEL"}
+
+        
+
+ websocket , :
+
+1. init websocket connection
+2. calling start api
+3. keep writing to the stream until receive message until end
+4. close connection
+
+Message call back:
+if ( "START" == action ){
+
+ if ( handle <= 0 ){
+   alert("Cannot start recording !!!" + handle);
+
+ }
+}else if ( "STOP" == action ){
+
+ stop_stream();
+ handleResultList(["RESULT"]);
+}else if ( "WRITE" == action ){
+ if ( "FAIL" == status ){
+
+   stop_stream();
+   alert("cannot handle process");
+ }
+}
+
+ websocket  API ,  send binary , send text  , 
+ STATUS "FAIL", :
+
+{"STATUS":"FAIL","ACTION":"WRITE","MESSAGE": "NOT_START"}
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 64 of 99
+NLP Voice Engine API Manual
+
+ websocket  JAVA ,
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 65 of 99
+NLP Voice Engine API Manual
+
+ ()
+
+7.1 
+
+URL  /api/status/service/all
+
+HTTP
+                  Get
+
+Method
+
+     
+
+      ML 
+
+     JSON 
+
+     
+
+     {
+        "server-name-1": {
+            "service-1": "running",
+            "service-2": "running",
+            "service-3": "running"
+        },
+        "server-name-2": {
+            "service-1": "running",
+            "service-2": "running",
+            "service-3": "running"
+        }
+
+     }
+
+     
+
+     {
+        "ml-1": {
+            "redis": "running",
+            "ua2x-1": "running",
+            "sentinel7000": "running",
+            "x2y": "running",
+            "mysql": "running"
+        },
+        "rtsa-1": {
+            "redis": "running",
+            "sentinel7000": "running",
+            "x2y": "running",
+            "ua2x3-2": "running",
+            "ua2x3-1": "running",
+            "mysql": "running"
+        },
+        "rtsa-2": {
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 66 of 99
+NLP Voice Engine API Manual
+                              "redis": "running",
+                              "sentinel7000": "running",
+                              "x2y": "running",
+                              "ua2x3-2": "running",
+                              "ua2x3-1": "running",
+                              "mysql": "running"
+
+                          }
+                       }
+
+7.2 
+
+URL  /api/faq/zip/export/<questionId>
+
+HTTP
+                  Get
+
+Method
+
+     ( faq )
+
+     - questonIdCategory Path"->"
+         <questionId> ROOT 
+
+     JSON 
+
+     - MESSAGE: "DONE"
+
+     - STATUS: "true"
+
+     
+
+     {
+        "MESSAGE": "DONE",
+        "STATUS": true
+
+     }
+
+7.3 
+
+URL  /api/faq/export/status
+
+HTTP
+                  Get
+
+Method
+
+     
+
+     JSON 
+
+     - TIME: 
+
+     - MESSAGE: 
+
+     - FILENAME:  ZIP 
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 67 of 99
+NLP Voice Engine API Manual
+
+                         
+
+        - STATUS:  true
+
+        
+
+        {
+           "MESSAGE": "DONE",
+           "FILENAME": "faq_1530763552166.zip",
+           "STATUS": true
+
+        }
+
+7.4 
+
+URL     /api/faq/tmp/zip/{filename}
+
+HTTP
+                  Get
+
+Method
+
+         FILENAME 
+
+        File
+
+        ZIP
+
+        ZIP  CSV 
+
+7.5 
+
+URL     /api/faq/zip/import
+
+HTTP    Post
+Method
+
+         zip  25MB
+        
+
+        File (form-data name="data")
+
+        zip
+
+        
+
+        
+
+        {
+           "STATUS": "SUBMIT"
+
+        }
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 68 of 99
+NLP Voice Engine API Manual
+
+7.6 
+
+URL  /api/faq/import/status
+
+HTTP
+                  Get
+
+Method
+
+     
+
+     
+
+     - MESSAGE: "DONE"
+
+     - STATUS: "true"
+
+     
+
+     {
+        "MESSAGE": "DONE",
+        "STATUS": true
+
+     }
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 69 of 99
+NLP Voice Engine API Manual
+
+7.7 
+
+URL  /train/csv/export/extended/all
+
+HTTP
+                    Get
+
+Method
+
+     
+
+     File
+
+     CSV
+
+      CSV 
+
+     "#timestamp" responseId  faqid expectedFaqid confidence             questionId                question
+
+     <timestamp_1> <responseId_1> <faqid_1>           <expectedFaqid_1>  <confidence_1>
+
+                         <questionid_1> <question_1>
+
+     <timestamp_2> <responseId_2> <faqid_2>           <expectedFaqid_2>  <confidence_2>
+
+                         <questionid_2> <question_2>
+
+     ......
+
+     <Tab>
+
+     - timestamp: 
+
+     - responseId 
+
+     - faqid: () ID
+
+     - expectedFaqid: ()ID
+
+     - confidence: 0.0 ­ 100.0
+
+     - questionId: 
+
+     - question: 
+
+      CSV 
+
+     "#timestamp" responseId  faqid expectedFaqid confidence             questionId                question
+
+     2015-12-02T14:59:05 1449039538130 1              1  100.0 default Hello
+
+     2015-12-02T15:00:10 1449039603210 1              1  100.0 default How are you
+
+     ......
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 70 of 99
+NLP Voice Engine API Manual
+
+7.8  response 
+
+URL     /api/response/zip/export
+
+HTTP    Post
+Method
+
+         response 
+
+        JSON 
+
+        - from: MM/DD/YYYY  YYYY-MM-
+            DD'T'hh:mm:ss
+
+        - to: MM/DD/YYYY  YYYY-MM-
+            DD'T'hh:mm:ss)
+
+        - createFrom: MM/DD/YYYY  YYYY-MM-
+            DD'T'hh:mm:ss
+
+        - createTo: MM/DD/YYYY  YYYY-MM-
+            DD'T'hh:mm:ss)
+
+        - questionId: "->"ROOT->A->B
+
+        - faqid:  ID
+
+        - expectedFaqid: ID
+
+        
+
+        {"from": "05/27/2021",
+        "to": "05/27/2021",
+        "questionId": "ROOT->UnicomFZ->" ,
+        "faqid": "AN05",
+        "expectedFaqid": "AN03"}
+
+         
+
+        {"from": "2021-05-27T01:00:00",
+        "to": "2021-05-27T23:00:00"}
+
+        JSON 
+
+        - MESSAGE: "DONE"
+
+        - STATUS: "true"
+
+        
+
+        {
+           "MESSAGE": "DONE",
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 71 of 99
+NLP Voice Engine API Manual
+                          "STATUS": true
+
+                       }
+
+7.9  response 
+
+URL  /api/response/export/status
+
+HTTP
+                  Get
+
+Method
+
+      response 
+
+     JSON 
+
+     - TIME:  response 
+
+     - MESSAGE:  response 
+
+     - FILENAME:  ZIP  response 
+           
+
+     - STATUS: response  true
+
+     
+
+     {
+        "MESSAGE": "DONE",
+        "FILENAME": "rsp_1530763552166.zip",
+        "STATUS": true
+
+     }
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 72 of 99
+NLP Voice Engine API Manual
+
+7.10  response 
+
+URL     /api/tmp/zip/{filename}
+
+HTTP
+                  Get
+
+Method
+
+         response  FILENAME  response 
+
+        File
+
+        ZIP
+
+        ZIP  response 
+
+7.11  response 
+
+URL     /api/response/zip/import
+
+HTTP    Post
+Method
+
+         response zip  25MB ID 
+        
+
+        File (form-data name="data")
+
+        zip
+
+        
+
+        
+
+        {
+           "STATUS": "SUBMIT"
+
+        }
+
+7.12  response 
+
+URL     /api/response/import/status
+
+HTTP
+                  Get
+
+Method
+
+         response 
+
+        JSON 
+
+        - MESSAGE: "DONE"
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 73 of 99
+NLP Voice Engine API Manual
+
+                  - STATUS: "true"
+
+                  
+
+                       {
+                          "MESSAGE": "DONE",
+                          "STATUS": true
+
+                       }
+
+7.13 
+
+URL     /api/housekeeping/folder/download
+
+HTTP    Post
+Method
+
+         ML  zip
+
+         ML 
+
+        JSON 
+
+        - from: MM/DD/YYYY  YYYY-MM-
+              DDThh:mm:ss
+
+        - to: MM/DD/YYYY  YYYY-MM-
+              DDThh:mm:ss
+
+         90 
+
+         ­ MM/DD/YYYY
+
+        {
+           "from": "06/27/2018",
+           "to": "06/29/2018"
+
+        }
+
+         ­ YYYY-MM-DDThh:mm:ss
+
+        {
+           "from": "2018-06-27T00:00:00",
+           "to": "2018-07-03T00:00:00"
+
+        }
+
+        JSON 
+
+        - id:  zip 
+
+        - MESSAGE: 
+            
+
+        · EMPTY_SET: 
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 74 of 99
+NLP Voice Engine API Manual
+
+                       · INVALID_FROM: 
+
+                       · INVALID_TO: 
+
+                  - STATUS: true  false
+
+                   - 
+
+                       {
+                          "id": "6e8b004f-35c3-4889-9e36-c88346324562",
+                          "STATUS": true
+
+                       }
+
+                   ­ 
+
+                       {
+                          "MESSAGE": "EMPTY_SET",
+                          "STATUS": false
+
+                       }
+
+7.14 
+
+URL  /api/async/file/list/{prefix}
+
+HTTP
+                  Get
+
+Method
+
+     
+
+      ML  ZIP 
+     " wav_" 7.6  id
+
+     JSON 
+
+     
+
+     [
+        "/usr/local/tomcat/temp/async/wav_05684a99-d8de-4fb7-84f1-193bec7f292b.zip",
+        "/usr/local/tomcat/temp/async/wav_6e8b004f-35c3-4889-9e36-c88346324562.zip",
+        "/usr/local/tomcat/temp/async/wav_4fdde1ed-d354-47d3-9610-47c0773982e2.zip",
+        "/usr/local/tomcat/temp/async/wav_b4840d43-16af-492d-b1b4-9bf2fab379f8.zip"
+
+     ]
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 75 of 99
+NLP Voice Engine API Manual
+
+7.15 
+
+URL  /api/async/file/get/{id}
+
+HTTP
+                  Get
+
+Method
+
+      7.6  id 
+
+      ML 
+
+     File
+
+     ZIP
+
+     ZIP 
+     
+
+7.16 
+
+URL  /api/async/file/del/{id}
+
+HTTP
+                  Get
+
+Method
+
+      7.6  id 
+
+      ML 
+
+     JSON 
+
+     - MESSAGE: "DONE"
+
+     - STATUS: "true"
+
+     
+
+     {
+        "MESSAGE": "DONE",
+        "STATUS": true
+
+     }
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 76 of 99
+NLP Voice Engine API Manual
+
+ 
+
+8.1 
+
+URL     /api/config/engine/update
+
+HTTP    Post
+Method
+
+        
+
+        JSON 
+
+        - defaultEngine: true  false
+
+        - caseSensitive: true  false
+
+        - accentsSensitive: true  false
+
+        - phonicSensitive: true  false
+
+        - removeDuplicate: true  false
+
+        - overQuotaNotifyUrl: 
+
+        - sessionTimeoutLimit: 
+
+        - defaultNBest:  0 
+
+        - minGap: 0-1.0
+
+        - rebalanceThreshold:  0
+
+        - rebalanceGain: 0-10
+
+        
+
+        {
+           engineSettings: {
+               defaultEngine: true,
+               caseSensitive: false,
+               accentsSensitive: false,
+               phonicSensitive: false,
+               removeDuplicate: false,
+               overQuotaNotifyUrl: null,
+               sessionTimeoutLimit: 1800,
+               defaultNBest: 0,
+               minGap: 0.2,
+               rebalanceThreshold: 0,
+               rebalanceGain: 2.5
+           }
+
+        }
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 77 of 99
+NLP Voice Engine API Manual
+
+     JSON 
+
+     - MESSAGE: "DONE"
+
+     - STATUS: "true"
+
+     
+
+     {
+        "MESSAGE": "DONE",
+        "STATUS": true
+
+     }
+
+8.2 
+
+URL  /api/engine/counter
+
+HTTP
+                  Get
+
+Method
+
+      12 
+
+     JSON 
+
+     - MESSAGE:  JSON  12 
+
+     - STATUS: "true"
+
+     
+
+     {
+        "MESSAGE": [
+            {"201901": 1058},
+            {"201812": 43},
+            {"201902": 0}
+        ],
+        "STATUS": true
+
+     }
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 78 of 99
+NLP Voice Engine API Manual
+
+8.3 
+
+URL  /api/engine/time/utc
+
+HTTP
+                  Get
+
+Method
+
+      UTC 
+
+     
+
+     YYYY-MM-DDThh:mm:ss
+
+     
+
+     2019-01-01T07:11:12
+
+8.4 
+
+URL  /api/engine/expiry/utc
+
+HTTP
+                  Get
+
+Method
+
+      UTC 
+
+     
+
+     YYYY-MM-DDThh:mm:ss
+
+     
+
+     2019-12-31T15:59:59
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 79 of 99
+NLP Voice Engine API Manual
+
+8.5 
+
+URL  /api/config/version
+
+HTTP
+                  Get
+
+Method
+
+     
+
+     JSON 
+
+     
+
+     {
+        X2YCommonVersionInfo: "X2YCommon version: 152abf6",
+        NLPInterfaceVersionInfo: "NLPInterface version: 741d89c",
+        X2YEngineVersionInfo: "X2YEngine version: 123731f",
+       TSBaseVersionInfo: "TSBase version: a05f3ab",
+        A2XAdapterVersionInfo: "A2XAdapter version: 268f7ff"
+
+     }
+
+8.6 
+
+URL  /api/auditLog
+
+HTTP
+                  Get
+
+Method
+
+     
+
+     actionType              actionDetail
+
+     | exportfaqcsv    | success : export faq_1606119339367.csv |
+
+     | exportfaqzip          | success : export faq_1612338846250.zip |
+
+     | exportresponsecsv | success : export allExtendedResponse.csv |
+
+     | importfaqcsv          | success : import faq_1595842885825.csv |
+
+     | importfaqzip          | success : import faq_1595929669118.zip |
+
+     | importresponsecsv | success : import allExtendedResponse.csv |
+
+     | importresponsezip | success : import rsp_1595831734471.zip |
+
+     | train                 | ALL                                       |
+
+     | clearfaq              | success : clear all faqs                     |
+
+     | clearresponse         | success : clear all responses             |
+
+     | deletefaq             | success : {"id":"ttt","categoryid":2,"question" :"ttt","answer":"ttt","sort":0,"attachments":[]}|
+
+     | addattachment         | success : .wav saved to faq {"id":"CP00", "categoryid":1,"question":"","answer":"
+                             ","sort":0,"attachments":[]} |
+
+     | deleteattachment | success : .wav deleted from faq {"id":"CP 00","categoryid":1,"question":"","answer":" 
+
+                             ","sort":0,"attachments": [{"id":1,"filename":".wav"}]}               |
+
+     ......
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide     Page 80 of 99
+NLP Voice Engine API Manual
+
+     JSON 
+
+     
+
+     [
+                 {
+                             "ID":1,
+                             "User_IP":"120.230.113.109",
+                             "Username":"user_account",
+                             "Action_type":"train",
+                             "Action_detail":"ALL",
+                             "Start_time":"2020-10-23 17:42:54",
+                             "End_time":"2020-10-23 17:42:54"
+                 },
+                 {
+                             "ID":2,
+                             "User_IP":"120.230.113.109",
+                             "Username":"user_account",
+                             "Action_type":"clearresponse",
+                             "Action_detail":"success: clear all responses",
+                             "Start_time":"2020-10-23 17:43:48",
+                             "End_time":"2020-10-23 17:43:48"
+                 }
+
+     ]
+
+8.7 
+
+URL  /api/lastImportExportLog
+
+HTTP
+                  Get
+
+Method
+
+     
+
+     JSON 
+
+     
+
+     [
+                 {
+                             "Username":"user_account",
+                             "Action_type":"importfaqcsv",
+                             "Start_time":"2020-10-23 17:42:54"
+                 },
+                 {
+                             "Username":"user_account",
+                             "Action_type":"importresponsecsv",
+                             "Start_time":"2020-10-23 17:43:48"
+                 },
+                 {
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 81 of 99
+NLP Voice Engine API Manual
+                                               "Username":"user_account",
+                                               "Action_type":"exportfaqcsv",
+                                               "Start_time":"2020-10-25 17:43:48"
+
+                                   },
+                                   {
+
+                                               "Username":"user_account",
+                                               "Action_type":"exportresponsecsv",
+                                               "Start_time":"2020-10-25 17:43:48"
+                                   }
+                       ]
+
+ 
+
+9.1 
+
+,  API  
+:
+
+AUTH_TYPE,ANT_URL,ROLE
+BASIC,/api/response/clear,ADMIN
+BASIC,/api/faq/clear,ADMIN
+BASIC,/queryj/**,LOGIN
+BASIC,/api/faq/all,LOGIN
+BASIC,/category/all,LOGIN
+WEB,/Faq.html,LOGIN
+WEB,/,LOGIN
+WEB,/report.jsp,LOGIN
+
+AUTH_TYPE ,  BASIC,  WEB BASIC , ;
+WEB ,  LOGIN  ANT_URL  API ROLE 
+ API
+
+, :
+
+<html>
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+<script>
+var server = "https://localhost:12345";
+var username = 'user_account';
+var password = 'user_password';
+var token = '';
+$.ajax
+
+ ({
+   type: "POST",
+   url: server + "/oauth/token",
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 82 of 99
+NLP Voice Engine API Manual
+   contentType: "application/x-www-form-urlencoded",
+   data: "grant_type=password&username="+username+"&password="+password+"&client_id=user_account",
+   success: function (data){
+            console.debug(data);
+     token = data['access_token'];
+     $('#token').html('token:' + token);
+     getFaqs();
+   }
+
+});
+
+function getFaqs(){
+ if ( token == undefined )
+ {
+   alert('auth token is not ready!!!');
+   return;
+ }
+ $.ajax
+   ({
+     type: "GET",
+     url: server + "/api/faq/all?access_token=" + token,
+     success: function (data){
+     console.debug(data);
+     $('#result').text(JSON.stringify(data).replace(new RegExp(',{','g'),',\n{'));
+     }
+ });
+
+}
+</script>
+</head>
+<body>
+Testing page
+<div id="token"></div>
+<div>
+
+ <div><pre id="result"></pre></div>
+</body>
+</html>
+
+ HTML ,  API/oauth/token  token, , 
+URL  access_token 
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 83 of 99
+NLP Voice Engine API Manual
+
+9.2 Category Switching
+
+
+
+
+
+
+
+
+ ROOT  ABC  A  3  FAQ B  2  FAQ C 
+ 2  FAQFaqid  1  7 FAQ 2  B 
+ B  FAQ 3  C
+
+ Category Switching  JSON  Faqid  QID
+
+{"<Faqid_1>":"<QID_1>","<Faqid_2>":"<QID_2>"}
+
+Faqid  FAQQID 
+"->"
+
+"ROOT->A""Category Switching"
+{"2":"ROOT->B","3":"ROOT->C"}
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 84 of 99
+NLP Voice Engine API Manual
+
+ API 
+ API  9.2"
+"
+
+ 9.2""
+ JSON "followUp"
+"followUp"
+"followUp"
+
+ 9.2""
+
+1. "followUp"
+
+URL          http://192.168.1.103:25000/queryj/x/ROOT->A/2111/1
+
+
+
+{
+
+   "responseId": "2111",
+
+   "answer": "1",
+
+   "confidence": "99.55",
+
+   "question": "1",
+
+   "y": "1"
+
+}
+
+2. "followUp"
+
+URLhttp://192.168.1.103:25000/queryj/x/ROOT->A/2112/2
+
+{
+
+   "responseId": "2112",
+   "answer": "2",
+   "confidence": "99.55",
+   "question": "2",
+   "followUp": "ROOT->B",
+   "y": "2"
+}
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 85 of 99
+NLP Voice Engine API Manual
+
+ 2 "followUp""ROOT->B"
+"ROOT->B"
+
+
+
+
+
+
+
+ID,ACTION,CATEGORY,QUESTION,ANSWER,ATTACHMENT
+1,ADD,ROOT->A,1,1
+2,ADD,ROOT->A,2,2
+3,ADD,ROOT->A,3,3
+4,ADD,ROOT->B,4,4
+5,ADD,ROOT->C,5,5
+#START OF CATEGORY
+#MODE,ACTION,PATH,DESC,FAQID
+STANDARD,CAT,ROOT,"{""SWITCHING"":null,""DESC"":null,""VER"":""1.0""}",
+STANDARD,CAT,ROOT->A,"{""SWITCHING"":""{\""2\"":\""ROOT->B\"",\""3\"":\""ROOT-
+>C\""}"",""DESC"":null,""VER"":""1.0""}",
+STANDARD,CAT,ROOT->B,"{""SWITCHING"":null,""DESC"":null,""VER"":""1.0""}",
+SRANDARD,CAT,ROOT->C,"{""SWITCHING"":null,""DESC"":null,""VER"":""1.0""}",
+
+
+
+1  1  ROOT->A
+
+2  2  ROOT->A
+
+3  3  ROOT->A
+
+4  4  ROOT->B
+
+5  5  ROOT->C
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 86 of 99
+NLP Voice Engine API Manual
+
+: 
+
+ NLP Engine API Manual, , ; 
+,  ,  Restful Client  
+ Restful Client , , ,  POSTMAN
+
+
+NLP Engine API ,  HTTP GET  HTTP POST ,  POSTMAN ,
+, "Region: 1",  Postman  GET,  POST , 
+: < POSTMAN HTTP GET()>,  HTTP GET 
+
+                                        :  POSTMAN HTTP GET()
+
+"Region: 2" URL, ,  3.1 <>, 
+ API  URL,  Server Address, Port Address  API
+URL  URL,   HTTPS ,  URL 
+"https"
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 87 of 99
+NLP Voice Engine API Manual
+
+ HTTP GET , "Authorization , "Region: 4""Basic Auth"
+
+
+, "Region: 3""Send", "Region: 5", 
+
+ HTTP GET , 
+
+ NLP Engine API  HTTP POST ,  CSV , 
+ 5.1<>,  POSTMAN  HTTP POST  CSV
+:
+
+                                                : POSTMAN HTTP POST 
+
+, "Region: 1", "POST", "Region: 2""/train/csv"
+URL"Region: 3""Body", "Body", "Region: 5""data", "Region: 6"
+, "File", "Choose file",  CSV 
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 88 of 99
+NLP Voice Engine API Manual
+
+, "Region: 4""Send", , "Region: 7"
+
+
+ POSTMAN  HTTP GET  HTTP POST , , 
+,  POSTMAN ,  POSTMAN
+
+
+: 
+
+ API 
+
+                              
+
+ADD_FAQ_CANNOT_BE_INVALID     
+
+ADD_FAQ_CANNOT_BE_NULL        
+
+CATEGORY_NOT_FOUND            
+
+DUPLICATE_CATEGORY_NAME       
+
+DUPLICATE_FAQ                 
+
+EMPTY_ANSWER                  
+
+EMPTY_ID                       ID 
+
+EMPTY_INPUT                   
+
+EMPTY_NAME                    
+
+EMPTY_QUESTION                
+
+FAQ_NOT_FOUND                 
+
+INVALID_CATEGORY              
+
+INVALID_ID                     ID 
+
+PARENT_NOT_FOUND              
+
+UPDATE_FAQ_CANNOT_BE_INVALID  
+
+UPDATE_FAQ_CANNOT_BE_NULL     
+
+
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 89 of 99
+NLP Voice Engine API Manual
+
+: VAD
+
+ 6.3 VAD
+
+
+VAD 
+
+                                                     
+sampleRate                   8000,     8000           16-bit
+                             16000,                  Signed PCM 8000
+MinActive-Speech-Duration    32000     200           HzPC  16000 
+                             (Hz)             200    32000Hz
+                             100-2000                
+                             ms               15000  
+                                              (ms)    VAD 
+Max-Speech-Duration          0-20000   15000         
+                             (ms)      (ms)   1100   
+                                                     VAD 
+End-Silence-Duration         500-3000 800     150     MRCP  Recognition
+                             ms               (ms)   Timeout 
+                                              300    
+Speeh-Timeout                100-500   150    5000   
+Silence-Timeout              (ms)      (ms)          MinActiveSpeechDuration 
+No-Input-Timeout             100-500   300           VAD 
+                             ms                      
+                             0-30000   5000          
+                             ms                      
+                                                     
+                                                     
+                                                     VAD 
+                                                     
+
+VAD  MinActive-Speech-Duration  End-Silence-Duration MinActive-Speech-
+Duration  End-Silence-Duration  MinActive-Speech-Duration
+ 500msEnd-Silence-Duration  100ms
+
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 90 of 99
+NLP Voice Engine API Manual
+
+ VAD 
+
+                                                     
+Decay-Enable                 0,1       1      1       VAD 1 0 
+                                                     
+Decay-Time1                  0-30000   4500   5000    1  VAD 
+Decay-Time2                  0-30000   6000   10000   2  VAD 
+Decay-Time3                  0-30000   15000  15000   3  VAD 
+Decay-Silence-Duration1      500-3000  1500   1500    1  VAD 
+                             ms        (ms)   (ms)
+Decay-Silence-Duration2      500-3000  1100   1100    2  VAD 
+                             ms        (ms)   (ms)
+Decay-Silence-Duration3      500-3000  700    700     3  VAD 
+                             ms        (ms)   (ms)
+Decay-Active-Duration1       100-2000  600    600     1  VAD 
+                             ms        (ms)   (ms)
+Decay-Active-Duration2       100-2000  300    300     2  VAD 
+                             ms        (ms)   (ms)
+Decay-Active-Duration3       100-2000  200    200     3  VAD 
+                             ms        (ms)   (ms)
+
+ VAD  Decay-Active-Duration  Decay-Silence-Duration Decay-
+Active-Duration  Decay-Silence-Duration  Decay-Active-
+Duration  100msDecay-Silence-Duration  100ms
+
+
+ VAD 
+Decay-Silence-Duration11500msDecay-Active-Duration11000ms
+ VAD 5 Decay-Silence-Duration21100ms
+Decay-Active-Duration2300ms VAD  5 
+Decay-Silence-Duration3700msDecay-Active-Duration3200ms
+
+ VAD 
+VAD  5  15 
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 91 of 99
+NLP Voice Engine API Manual                       
+                             0, 1     1     1     
+                                                   1
+                                      300   200   
+                                      (ms)  (ms)  
+Adaptive-Level-Enable                             a2x.adaptiveLevelEnable=1 
+                                      2     2     
+Adaptive-Level-Duration      100-800              
+                             ms                    1-
+                                                  5 2
+Adaptive-Level-Coef          1-5                  
+
+ VAD VAD 
+ 2.2 VAD 
+ 5.1 VAD 
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 92 of 99
+NLP Voice Engine API Manual
+
+: 
+
+
+
+
+
+
+
+1. 
+
+URL     /api/uaudio/file/text
+
+HTTP    Post
+Method
+
+        
+
+        File (form-data name="data")
+
+        WAV  signed 16 bit pcm(raw) mono 
+
+        
+
+        
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 93 of 99
+NLP Voice Engine API Manual
+
+
+Websocket Websocket 
+ Websocket 
+
+
+2. 
+
+URL      /api/uaudio/websocket
+
+Request  Websocket ws  wss
+Method
+
+         
+         
+
+ ­ 
+
+         JSON 
+
+         - ACTION: START START  websocket 
+              STOP 
+             CANCEL  websocket 
+
+         - ASR: true  false
+
+         - responseId: 
+
+         - sampleRate:  8000 8000  44100
+
+          (VAD)
+         : VAD
+
+         
+
+         {"ACTION":"START", "ASR": "true", "sampleRate":44100,"responseId":"<UNIQUE_ID>"}
+
+         JSON 
+
+         - STATUS: , STATUS "RECORDING",  STATUS ,
+               STATUS "FAIL", 
+
+         - ACTION: ACTION "START""STOP"
+              "CANCEL"
+             
+
+         - HANDLE:  HANDLE  0 
+
+         
+
+                       {"STATUS":"RECORDING","ACTION":"START","HANDLE": <HANDLE_ID>}
+
+ ­ 
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 94 of 99
+NLP Voice Engine API Manual
+
+  JSON 
+
+  - ACTION: STOP"STOP"
+      
+
+  
+
+  {"ACTION":"STOP"}
+
+  JSON 
+
+  - STATUS: "true""false"
+
+  - ACTION: "STOP"
+
+  - RESULT:  JSON 
+
+  - txt: 
+
+  - responseId: 
+
+  
+
+                       {"STATUS":true,"ACTION":"STOP","RESULT":{"txt":"<OUTPUT TEXT>","responseId":"<responseId from
+                       INPUT>"}}
+
+ ­ 
+
+  JSON 
+
+  - ACTION: CANCEL"CANCEL"
+      
+
+  
+
+  {"ACTION":"CANCEL"}
+
+  
+
+ ­ 
+
+  Signed 16bit PCMrawMono 8000 
+  44100 
+
+   websocket RFC6455
+
+  JSON 
+
+  
+
+  -   ­ 
+      
+
+  - 
+
+  - 
+
+   1 ­ 
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 95 of 99
+NLP Voice Engine API Manual
+                       {"STATUS":true,"ACTION":"STOP","RESULT":{"txt":"<OUTPUT TEXT>","responseId":"<responseId from
+                       INPUT>"}}
+
+                   2 ­ 
+
+                       {"STATUS":"FAIL","ACTION":"WRITE","MESSAGE": "NOT_START"}
+
+ websocket , :
+
+1. init websocket connection
+2. calling start api
+3. keep writing to the stream until receive message until end
+4. close connection
+
+Message call back:
+if ( "START" == action ){
+
+ if ( handle <= 0 ){
+   alert("Cannot start recording !!!" + handle);
+
+ }
+}else if ( "STOP" == action ){
+
+ stop_stream();
+ handleResultList(["RESULT"]);
+}else if ( "WRITE" == action ){
+ if ( "FAIL" == status ){
+
+   stop_stream();
+   alert("cannot handle process");
+ }
+}
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 96 of 99
+NLP Voice Engine API Manual
+
+3. 
+
+URL      /api/dictation/websocket
+
+Request  Websocket ws  wss
+Method
+
+         
+
+          20 
+
+         
+
+         
+
+ ­ 
+
+         JSON 
+
+         - ACTION: START START  websocket 
+              STOP  CANCEL
+              websocket 
+
+         - responseId: 
+
+         - sampleRate:  8000 8000  44100
+
+          (VAD)
+         : VAD
+
+         
+
+         {"ACTION":"START", "ASR": "true", "sampleRate":44100,"responseId":"<UNIQUE_ID>"}
+
+         JSON 
+
+         
+         
+
+         
+
+         - STATUS: , STATUS "RECORDING",  STATUS ,
+               STATUS "FAIL", 
+
+         - ACTION: ACTION "START""STOP"
+              "CANCEL"
+             
+
+         - HANDLE:  HANDLE  0 
+
+         
+
+         {"STATUS":"RECORDING","ACTION":"START","HANDLE": <HANDLE_ID>}
+
+         
+
+         - ACTION:  MESSAGE
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 97 of 99
+NLP Voice Engine API Manual
+
+                  - message:  JSON 
+
+  - responseId: 
+
+  - sentId: 
+
+  - utterName: 
+
+  - result: 
+
+  - createDate: 
+
+  - status: "true""false"
+
+  
+
+                       {"ACTION":"MESSAGE","message":[{"responseId":"<UNIQUE_ID>","sentId":
+                       <sentId>,"utterName":"<utterName>","result":"  ","createDate":1559083927876}],"status":true}
+
+ ­ 
+
+  JSON 
+
+  - ACTION: STOP"STOP"
+      
+
+  
+
+  {"ACTION":"STOP"}
+
+  JSON 
+
+  - feedback:  0 
+
+  - STATUS: "true""false"
+
+  - ACTION: "STOP"
+
+  
+
+                       {"feedback":<feedback>,"STATUS":"STOP","ACTION":"STOP"}
+
+ ­ 
+
+  Signed 16bit PCMrawMono 8000 
+  44100 
+
+   websocket RFC6455
+
+  JSON 
+
+  
+
+  - 
+
+  - 
+
+   ­ 
+
+  {"STATUS":"FAIL","ACTION":"WRITE","MESSAGE": "NOT_START"}
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 98 of 99
+NLP Voice Engine API Manual
+
+ websocket , :
+
+1. init websocket connection
+2. calling start api
+3. keep writing to the stream
+4. keep receiving text from time to time until close command issued or nothing stream into the port
+5. close connection
+
+Message call back:
+if ( "START" == action ){
+
+ if ( handle <= 0 ){
+   alert("Cannot start recording !!!" + handle);
+
+ }
+}else if ( "STOP" == action ){
+
+ stop_stream();
+ handleResultList(["RESULT"]);
+}else if ( "WRITE" == action ){
+ if ( "FAIL" == status ){
+
+   stop_stream();
+   alert("cannot handle process");
+ }
+}
+
+ websocket  JAVA ,
+
+Confidential and Proprietary Information ©2020TSINGNOVA Corporation All Rights Reserved Worldwide  Page 99 of 99
+
