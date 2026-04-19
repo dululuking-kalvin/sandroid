@@ -8,7 +8,9 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 
-from sandroid.vad.base import SegmentEvent, SpeechSegment
+from sandroid.vad.base import SegmentEvent, SegmentResult, SpeechSegment
+
+_TARGET_SR = 16_000
 
 
 class MockVAD:
@@ -20,7 +22,7 @@ class MockVAD:
             return []
         return [SpeechSegment(start_ms=0, end_ms=duration_ms)]
 
-    async def stream(
+    async def stream_events(
         self,
         chunks: AsyncIterator[bytes],
     ) -> AsyncIterator[SegmentEvent]:
@@ -30,6 +32,23 @@ class MockVAD:
             if not sent_start:
                 yield SegmentEvent(kind="speech_start", at_ms=0)
                 sent_start = True
-            cursor_ms += (len(chunk) // 2) * 1000 // 16000
+            cursor_ms += (len(chunk) // 2) * 1000 // _TARGET_SR
         if sent_start:
             yield SegmentEvent(kind="speech_end", at_ms=cursor_ms)
+
+    async def stream_segments(
+        self,
+        chunks: AsyncIterator[bytes],
+    ) -> AsyncIterator[SegmentResult]:
+        accumulated = bytearray()
+        async for chunk in chunks:
+            accumulated += chunk
+        if not accumulated:
+            return
+        duration_ms = (len(accumulated) // 2) * 1000 // _TARGET_SR
+        yield SegmentResult(
+            pcm16=bytes(accumulated),
+            sample_rate=_TARGET_SR,
+            start_ms=0,
+            end_ms=duration_ms,
+        )

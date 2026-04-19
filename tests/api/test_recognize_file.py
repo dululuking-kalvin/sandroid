@@ -13,9 +13,11 @@ from sandroid.api.app import app
 from sandroid.api.deps import (
     DEV_DEFAULT_API_KEY,
     get_asr,
+    get_vad,
     reset_dependency_caches,
 )
 from sandroid.models.asr.stub import StubASR
+from sandroid.vad.mock import MockVAD
 
 AUTH_HEADER = {"X-API-Key": DEV_DEFAULT_API_KEY}
 
@@ -23,6 +25,9 @@ AUTH_HEADER = {"X-API-Key": DEV_DEFAULT_API_KEY}
 @pytest.fixture(autouse=True)
 def _reset_caches() -> Iterator[None]:
     reset_dependency_caches()
+    # Silent WAVs are used as fixtures; MockVAD accepts them as speech.
+    _mock = MockVAD()
+    app.dependency_overrides[get_vad] = lambda: _mock
     yield
     app.dependency_overrides.clear()
     reset_dependency_caches()

@@ -21,10 +21,14 @@ from sandroid.storage.scene_registry import SceneRegistry
 from sandroid.storage.session_store import InMemorySessionStore, SessionStore
 from sandroid.vad.base import VoiceActivityDetector
 from sandroid.vad.mock import MockVAD
+from sandroid.vad.silero import SileroVAD, SileroVADError
 
 DEFAULT_SCENES_DIR = Path(__file__).resolve().parents[3] / "configs" / "scenes"
+DEFAULT_SILERO_PATH = Path(__file__).resolve().parents[3] / "deploy" / "models" / "silero_vad.onnx"
 API_KEY_ENV = "SANDROID_API_KEY"
 DEV_DEFAULT_API_KEY = "dev-insecure-change-me"
+VAD_BACKEND_ENV = "SANDROID_VAD_BACKEND"  # "silero" (default) | "mock"
+SILERO_PATH_ENV = "SANDROID_SILERO_PATH"
 
 
 @lru_cache(maxsize=1)
@@ -50,7 +54,20 @@ def get_asr() -> ASRBackend:
 
 @lru_cache(maxsize=1)
 def get_vad() -> VoiceActivityDetector:
-    return MockVAD()
+    backend = os.environ.get(VAD_BACKEND_ENV, "silero").lower()
+    if backend == "mock":
+        return MockVAD()
+    if backend != "silero":
+        raise ValueError(f"unknown VAD backend {backend!r}; expected 'silero' or 'mock'")
+    model_path = Path(os.environ.get(SILERO_PATH_ENV, str(DEFAULT_SILERO_PATH)))
+    try:
+        return SileroVAD(model_path=model_path)
+    except SileroVADError:
+        # In dev environments where the ONNX file hasn't been fetched yet,
+        # fall back to MockVAD so the server still boots. Production should
+        # set SANDROID_VAD_BACKEND=silero explicitly and fail loud if the
+        # model is missing — wire that gate in Phase 5d.
+        return MockVAD()
 
 
 def get_orchestrator(
