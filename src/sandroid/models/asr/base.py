@@ -38,9 +38,14 @@ class AudioChunk(BaseModel):
 
 
 class ASRBackend(Protocol):
-    """Streaming + file transcription contract. Chunks in → partials out."""
+    """Streaming + file transcription contract. Chunks in → partials out.
 
-    async def stream(
+    ``stream`` is an async-generator function: call it (no ``await``) and
+    iterate the returned async iterator. mypy sees the return type below as
+    the async-generator shape the implementations yield.
+    """
+
+    def stream(
         self,
         chunks: AsyncIterator[AudioChunk],
     ) -> AsyncIterator[PartialTranscript]: ...

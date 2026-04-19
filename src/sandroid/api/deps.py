@@ -15,8 +15,12 @@ from fastapi import Depends, Header, HTTPException, status
 
 from sandroid.core.matcher import IntentMatcher, StubMatcher
 from sandroid.core.orchestrator import Orchestrator
+from sandroid.models.asr.base import ASRBackend
+from sandroid.models.asr.stub import StubASR
 from sandroid.storage.scene_registry import SceneRegistry
 from sandroid.storage.session_store import InMemorySessionStore, SessionStore
+from sandroid.vad.base import VoiceActivityDetector
+from sandroid.vad.mock import MockVAD
 
 DEFAULT_SCENES_DIR = Path(__file__).resolve().parents[3] / "configs" / "scenes"
 API_KEY_ENV = "SANDROID_API_KEY"
@@ -37,6 +41,16 @@ def get_session_store() -> SessionStore:
 @lru_cache(maxsize=1)
 def get_matcher() -> IntentMatcher:
     return StubMatcher()
+
+
+@lru_cache(maxsize=1)
+def get_asr() -> ASRBackend:
+    return StubASR()
+
+
+@lru_cache(maxsize=1)
+def get_vad() -> VoiceActivityDetector:
+    return MockVAD()
 
 
 def get_orchestrator(
@@ -62,3 +76,5 @@ def reset_dependency_caches() -> None:
     get_registry.cache_clear()
     get_session_store.cache_clear()
     get_matcher.cache_clear()
+    get_asr.cache_clear()
+    get_vad.cache_clear()
