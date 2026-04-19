@@ -17,6 +17,7 @@ dependencies = [
     "onnxruntime>=1.19",
     "httpx>=0.27",
     "python-multipart>=0.0.18",
+    "tokenizers>=0.20",
 ]
 
 [project.optional-dependencies]
@@ -58,6 +59,8 @@ ignore = [
 "tests/**" = ["PLR2004", "S101"]
 # FastAPI uses Depends() / Header() in argument defaults as its core DI idiom.
 "src/sandroid/api/**" = ["B008"]
+# Chinese tests legitimately contain fullwidth punctuation; RUF001 is noise.
+"tests/models/nlu/**" = ["RUF001"]
 
 [tool.mypy]
 python_version = "3.11"

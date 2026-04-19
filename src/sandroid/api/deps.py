@@ -17,18 +17,25 @@ from sandroid.core.matcher import IntentMatcher, StubMatcher
 from sandroid.core.orchestrator import Orchestrator
 from sandroid.models.asr.base import ASRBackend
 from sandroid.models.asr.stub import StubASR
+from sandroid.models.nlu.onnx_embedder import ONNXEmbedderError, ONNXEmbedderMatcher
 from sandroid.storage.scene_registry import SceneRegistry
 from sandroid.storage.session_store import InMemorySessionStore, SessionStore
 from sandroid.vad.base import VoiceActivityDetector
 from sandroid.vad.mock import MockVAD
 from sandroid.vad.silero import SileroVAD, SileroVADError
 
+_MODELS_ROOT = Path(__file__).resolve().parents[3] / "deploy" / "models"
 DEFAULT_SCENES_DIR = Path(__file__).resolve().parents[3] / "configs" / "scenes"
-DEFAULT_SILERO_PATH = Path(__file__).resolve().parents[3] / "deploy" / "models" / "silero_vad.onnx"
+DEFAULT_SILERO_PATH = _MODELS_ROOT / "silero_vad.onnx"
+DEFAULT_NLU_MODEL_PATH = _MODELS_ROOT / "nlu_embedder_quantized.onnx"
+DEFAULT_NLU_TOKENIZER_PATH = _MODELS_ROOT / "nlu_tokenizer.json"
 API_KEY_ENV = "SANDROID_API_KEY"
 DEV_DEFAULT_API_KEY = "dev-insecure-change-me"
 VAD_BACKEND_ENV = "SANDROID_VAD_BACKEND"  # "silero" (default) | "mock"
 SILERO_PATH_ENV = "SANDROID_SILERO_PATH"
+NLU_BACKEND_ENV = "SANDROID_NLU_BACKEND"  # "embedder" (default) | "stub"
+NLU_MODEL_PATH_ENV = "SANDROID_NLU_MODEL_PATH"
+NLU_TOKENIZER_PATH_ENV = "SANDROID_NLU_TOKENIZER_PATH"
 
 
 @lru_cache(maxsize=1)
@@ -44,7 +51,22 @@ def get_session_store() -> SessionStore:
 
 @lru_cache(maxsize=1)
 def get_matcher() -> IntentMatcher:
-    return StubMatcher()
+    backend = os.environ.get(NLU_BACKEND_ENV, "embedder").lower()
+    if backend == "stub":
+        return StubMatcher()
+    if backend != "embedder":
+        raise ValueError(f"unknown NLU backend {backend!r}; expected 'embedder' or 'stub'")
+    model_path = Path(os.environ.get(NLU_MODEL_PATH_ENV, str(DEFAULT_NLU_MODEL_PATH)))
+    tokenizer_path = Path(
+        os.environ.get(NLU_TOKENIZER_PATH_ENV, str(DEFAULT_NLU_TOKENIZER_PATH))
+    )
+    try:
+        return ONNXEmbedderMatcher(model_path=model_path, tokenizer_path=tokenizer_path)
+    except ONNXEmbedderError:
+        # Dev fallback (mirrors the VAD pattern): boot cleanly when artifacts
+        # aren't fetched yet. Production should set SANDROID_NLU_BACKEND
+        # explicitly and fail loud — Phase 5d will tighten the gate.
+        return StubMatcher()
 
 
 @lru_cache(maxsize=1)

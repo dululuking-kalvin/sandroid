@@ -37,6 +37,21 @@ MODELS: tuple[ModelSpec, ...] = (
         sha256="2623a2953f6ff3d2c1e61740c6cdb7168133479b267dfef114a4a3cc5bdd788f",
         dest=MODELS_DIR / "silero_vad.onnx",
     ),
+    # Chinese sentence embedder for the zero-training NLU baseline (Phase 5b).
+    # Xenova's ONNX export of BAAI/bge-small-zh-v1.5, INT8 quantized (~24 MB).
+    # Commit-pinned so `main` moving upstream can't silently swap our model.
+    ModelSpec(
+        name="nlu_embedder",
+        url="https://huggingface.co/Xenova/bge-small-zh-v1.5/resolve/75c43b069aac4d136ba6bc1122f995fedcfd2781/onnx/model_quantized.onnx",
+        sha256="15b717c382bcb518ba457b93ea6850ede7f4f1cd8937454aa06972366cd19bcc",
+        dest=MODELS_DIR / "nlu_embedder_quantized.onnx",
+    ),
+    ModelSpec(
+        name="nlu_tokenizer",
+        url="https://huggingface.co/Xenova/bge-small-zh-v1.5/resolve/75c43b069aac4d136ba6bc1122f995fedcfd2781/tokenizer.json",
+        sha256="48cea5d44424912a6fd1ea647bf4fe50b55ab8b1e5879c3275f80e339e8fae26",
+        dest=MODELS_DIR / "nlu_tokenizer.json",
+    ),
 )
 
 

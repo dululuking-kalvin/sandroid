@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 
 import pytest
-from starlette.testclient import TestClient
+from starlette.testclient import TestClient, WebSocketTestSession
 
 from sandroid.api.app import app
 from sandroid.api.deps import (
@@ -24,7 +24,7 @@ def _reset_caches() -> Iterator[None]:
     reset_dependency_caches()
 
 
-def _drain_until(ws, kinds: set[str]) -> list[dict]:
+def _drain_until(ws: WebSocketTestSession, kinds: set[str]) -> list[dict]:
     """Consume frames until one of ``kinds`` is the frame type."""
 
     seen: list[dict] = []

@@ -39,6 +39,8 @@ audit/
 *.pcm
 *.opus
 !tests/**/fixtures/*.wav
+# Fetched model artifacts — managed by scripts/fetch_models.py
+/deploy/models/
 
 # Secrets / local config
 .env
