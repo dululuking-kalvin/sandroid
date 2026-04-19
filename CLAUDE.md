@@ -244,6 +244,7 @@ Recorded here so future sessions do not re-litigate. Date stamps use the project
   - Storage path: `/var/sandroid/audit/{labeled|unlabeled}/{scene_id}/{YYYY-MM-DD}/`. Format: Opus (re-decode to PCM before training). A nightly job sweeps expired unlabeled files.
   - Per-scene YAML may override retention (e.g. compliance-heavy scenes set `unlabeled_retention_days: 1095`).
 - **2026-04-19** — MRCPv2 implementation: **strategy α — wrap UniMRCP C library** via Cython/pybind11 bindings. Rationale: long-term controllability and protocol conformance; acceptable upfront cost given FreeSWITCH is a day-one integration target. Strategies β (fork community Python MRCP), γ (from-scratch subset), δ (UniMRCP subprocess + event bridge) rejected.
+- **2026-04-20** — WS `/recognize/stream` protocol (spec: `docs/ws-protocol.md`). **Implicit handshake** — client may push PCM immediately after `start`; VAD `speech_start_ms` absorbs any lead-in race. No server `ready` frame (would add a needless RTT and diverge from MRCPv2 timing). Every frame (both directions) carries `session_id` + `turn_id` for correlation. **Barge-in via new `turn_id`** — a higher-id `start` implicitly terminates the previous turn; no explicit `stop` required. **Errors are async non-fatal frames** (`{type:"error", fatal:false}`); socket only closes on auth/shape failures or `fatal:true`. Rationale: the real speaker is an IVR caller with no visibility into server state, so the protocol optimizes for latency + observability + barge-in, not for handshake ceremony.
 
 ## Project Status
 

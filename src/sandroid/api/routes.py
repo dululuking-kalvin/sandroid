@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 import os
 from collections.abc import AsyncIterator
@@ -128,62 +129,222 @@ def _check_ws_api_key(websocket: WebSocket) -> bool:
     return provided is not None and provided == expected
 
 
-async def _drain_socket(
-    websocket: WebSocket,
-    queue: asyncio.Queue[AudioChunk | None],
-) -> None:
-    """Read binary PCM frames / JSON control until ``end`` or disconnect."""
+class _TurnContext:
+    """Per-turn mutable state owned by `recognize_stream`.
 
-    sequence = 0
-    try:
-        while True:
-            message = await websocket.receive()
-            if message.get("type") == "websocket.disconnect":
-                break
-            data = message.get("bytes")
-            if data is not None:
-                await queue.put(AudioChunk(pcm16=data, sequence=sequence))
-                sequence += 1
-                continue
-            text = message.get("text")
-            if text is None:
-                continue
-            try:
-                control = json.loads(text)
-            except ValueError:
-                continue
-            if control.get("type") == "end":
-                break
-    except WebSocketDisconnect:
-        pass
-    await queue.put(None)
+    A new `start` frame replaces the active context; the prior context's task
+    is cancelled so the client can barge-in without ceremony.
+    """
+
+    __slots__ = ("cancelled", "category_path", "n_best", "queue", "scene_id", "task")
+
+    def __init__(
+        self,
+        scene_id: str | None,
+        category_path: str | None,
+        n_best: int,
+    ) -> None:
+        self.scene_id = scene_id
+        self.category_path = category_path
+        self.n_best = n_best
+        self.queue: asyncio.Queue[AudioChunk | None] = asyncio.Queue()
+        self.task: asyncio.Task[str] | None = None
+        self.cancelled = False
+
+
+async def _send_error(
+    websocket: WebSocket,
+    session_id: str,
+    turn_id: int,
+    code: str,
+    message: str,
+    *,
+    fatal: bool = False,
+) -> None:
+    await websocket.send_json(
+        {
+            "type": "error",
+            "code": code,
+            "message": message,
+            "fatal": fatal,
+            "session_id": session_id,
+            "turn_id": turn_id,
+        }
+    )
 
 
 async def _pump_asr(
     websocket: WebSocket,
     asr: ASRBackend,
-    queue: asyncio.Queue[AudioChunk | None],
+    ctx: _TurnContext,
+    session_id: str,
+    turn_id: int,
 ) -> str:
     async def source() -> AsyncIterator[AudioChunk]:
         while True:
-            item = await queue.get()
+            item = await ctx.queue.get()
             if item is None:
                 return
             yield item
 
     final_text = ""
     async for partial in asr.stream(source()):
+        if ctx.cancelled:
+            break
         await websocket.send_json(
             {
                 "type": "final" if partial.is_final else "partial",
                 "text": partial.text,
                 "start_ms": partial.start_ms,
                 "end_ms": partial.end_ms,
+                "session_id": session_id,
+                "turn_id": turn_id,
             }
         )
         if partial.is_final:
             final_text = partial.text
     return final_text
+
+
+async def _finalize_turn(
+    websocket: WebSocket,
+    orchestrator: Orchestrator,
+    ctx: _TurnContext,
+    session_id: str,
+    turn_id: int,
+) -> None:
+    """Drain ASR, run the orchestrator, emit `result` or a non-fatal error."""
+
+    assert ctx.task is not None
+    try:
+        final_text = await ctx.task
+    except asyncio.CancelledError:
+        return
+
+    if ctx.cancelled:
+        return
+
+    if not final_text.strip():
+        await _send_error(websocket, session_id, turn_id, "NO_SPEECH", "no transcript produced")
+        return
+
+    req = RecognitionRequest(
+        scene_id=ctx.scene_id,
+        category_path=ctx.category_path,
+        text=final_text,
+        session_id=session_id,
+        n_best=ctx.n_best,
+    )
+    try:
+        response = await orchestrator.recognize(req)
+    except KeyError as exc:
+        await _send_error(websocket, session_id, turn_id, "UNKNOWN_SCENE", str(exc))
+        return
+    except ValueError as exc:
+        await _send_error(websocket, session_id, turn_id, "INVALID_REQUEST", str(exc))
+        return
+
+    payload = response.model_dump()
+    payload["session_id"] = session_id
+    payload["turn_id"] = turn_id
+    await websocket.send_json({"type": "result", **payload})
+
+
+async def _cancel_turn(ctx: _TurnContext) -> None:
+    ctx.cancelled = True
+    await ctx.queue.put(None)
+    if ctx.task is not None and not ctx.task.done():
+        ctx.task.cancel()
+        with contextlib.suppress(asyncio.CancelledError, Exception):
+            await ctx.task
+
+
+class _StreamSession:
+    """Owns a single WS connection's turn state machine."""
+
+    __slots__ = ("_asr", "_ctx", "_current_turn_id", "_finalize", "_orchestrator", "_session_id")
+
+    def __init__(self, orchestrator: Orchestrator, asr: ASRBackend) -> None:
+        self._orchestrator = orchestrator
+        self._asr = asr
+        self._session_id: str | None = None
+        self._current_turn_id: int = -1
+        self._ctx: _TurnContext | None = None
+        self._finalize: asyncio.Task[None] | None = None
+
+    async def handle_pcm(self, data: bytes) -> None:
+        if self._ctx is None or self._ctx.cancelled:
+            return
+        await self._ctx.queue.put(AudioChunk(pcm16=data, sequence=0))
+
+    async def handle_stop(self) -> None:
+        if self._ctx is None or self._ctx.cancelled:
+            return
+        await self._ctx.queue.put(None)
+
+    async def handle_start(self, websocket: WebSocket, control: dict) -> bool:
+        """Return False if the connection should be closed as fatal."""
+
+        new_session_id = control.get("session_id")
+        new_turn_id = control.get("turn_id")
+        scene_id = control.get("scene_id")
+        category_path = control.get("category_path")
+        if not isinstance(new_session_id, str) or not isinstance(new_turn_id, int):
+            await websocket.send_json(
+                {
+                    "type": "error",
+                    "code": "BAD_START",
+                    "message": "start requires string session_id and int turn_id",
+                    "fatal": True,
+                }
+            )
+            return False
+        if scene_id is None and category_path is None:
+            await _send_error(
+                websocket, new_session_id, new_turn_id,
+                "BAD_START", "either scene_id or category_path is required", fatal=True,
+            )
+            return False
+        if self._session_id is not None and new_session_id != self._session_id:
+            await _send_error(
+                websocket, new_session_id, new_turn_id,
+                "SESSION_MISMATCH", "session_id changed mid-connection", fatal=True,
+            )
+            return False
+        if new_turn_id <= self._current_turn_id:
+            await _send_error(
+                websocket, new_session_id, new_turn_id,
+                "STALE_TURN",
+                f"turn_id {new_turn_id} is not greater than current {self._current_turn_id}",
+            )
+            return True
+
+        await self._abandon_active()
+        self._session_id = new_session_id
+        self._current_turn_id = new_turn_id
+        ctx = _TurnContext(
+            scene_id=scene_id, category_path=category_path,
+            n_best=int(control.get("n_best", 5)),
+        )
+        ctx.task = asyncio.create_task(
+            _pump_asr(websocket, self._asr, ctx, new_session_id, new_turn_id)
+        )
+        self._ctx = ctx
+        self._finalize = asyncio.create_task(
+            _finalize_turn(websocket, self._orchestrator, ctx, new_session_id, new_turn_id)
+        )
+        return True
+
+    async def _abandon_active(self) -> None:
+        if self._ctx is not None and not self._ctx.cancelled:
+            await _cancel_turn(self._ctx)
+        if self._finalize is not None and not self._finalize.done():
+            self._finalize.cancel()
+            with contextlib.suppress(asyncio.CancelledError, Exception):
+                await self._finalize
+
+    async def close(self) -> None:
+        await self._abandon_active()
 
 
 @ws_router.websocket("/recognize/stream")
@@ -192,57 +353,41 @@ async def recognize_stream(
     orchestrator: Orchestrator = Depends(get_orchestrator),
     asr: ASRBackend = Depends(get_asr),
 ) -> None:
-    """Streaming recognition over WebSocket.
-
-    Protocol:
-    - Client connects; first frame is a JSON control message:
-        {"scene_id"|"category_path": ..., "session_id"?: ..., "n_best"?: int}
-    - Subsequent binary frames are raw 16 kHz mono PCM16 chunks.
-    - A JSON {"type": "end"} frame flips the stream to final.
-    - Server emits JSON partials / final and a RecognitionResponse at the end.
-    """
+    """Streaming recognition over WebSocket. See ``docs/ws-protocol.md``."""
 
     if not _check_ws_api_key(websocket):
         await websocket.close(code=4401)
         return
     await websocket.accept()
 
+    session = _StreamSession(orchestrator, asr)
     try:
-        control = await websocket.receive_json()
-    except WebSocketDisconnect:
-        return
-    scene_id = control.get("scene_id")
-    category_path = control.get("category_path")
-    if scene_id is None and category_path is None:
-        await websocket.send_json(
-            {"type": "error", "detail": "either scene_id or category_path is required"},
-        )
-        await websocket.close(code=4422)
-        return
+        while True:
+            try:
+                message = await websocket.receive()
+            except WebSocketDisconnect:
+                break
+            if message.get("type") == "websocket.disconnect":
+                break
 
-    queue: asyncio.Queue[AudioChunk | None] = asyncio.Queue()
-    asr_task = asyncio.create_task(_pump_asr(websocket, asr, queue))
-    await _drain_socket(websocket, queue)
-    final_text = await asr_task
+            data = message.get("bytes")
+            if data is not None:
+                await session.handle_pcm(data)
+                continue
 
-    if not final_text.strip():
-        await websocket.send_json({"type": "error", "detail": "no transcript produced"})
-        await websocket.close()
-        return
-
-    req = RecognitionRequest(
-        scene_id=scene_id,
-        category_path=category_path,
-        text=final_text,
-        session_id=control.get("session_id"),
-        n_best=int(control.get("n_best", 5)),
-    )
-    try:
-        response = await orchestrator.recognize(req)
-    except (KeyError, ValueError) as exc:
-        await websocket.send_json({"type": "error", "detail": str(exc)})
-        await websocket.close()
-        return
-
-    await websocket.send_json({"type": "result", **response.model_dump()})
-    await websocket.close()
+            text = message.get("text")
+            if text is None:
+                continue
+            try:
+                control = json.loads(text)
+            except ValueError:
+                continue
+            frame_type = control.get("type")
+            if frame_type == "start":
+                if not await session.handle_start(websocket, control):
+                    await websocket.close(code=4422)
+                    return
+            elif frame_type in {"stop", "end"}:
+                await session.handle_stop()
+    finally:
+        await session.close()
