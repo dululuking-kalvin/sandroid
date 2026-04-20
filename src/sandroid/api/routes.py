@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import io
 import json
 import os
+import wave
 from collections.abc import AsyncIterator
 
 from fastapi import (
@@ -34,8 +36,8 @@ from sandroid.core.orchestrator import (
     RecognitionRequest,
     RecognitionResponse,
 )
-from sandroid.models.asr.base import ASRBackend, AudioChunk
-from sandroid.vad.base import VoiceActivityDetector
+from sandroid.models.asr.base import ASRBackend
+from sandroid.vad.base import SegmentResult, VoiceActivityDetector
 
 router = APIRouter(prefix="/api/v1", dependencies=[Depends(require_api_key)])
 
@@ -147,7 +149,8 @@ class _TurnContext:
         self.scene_id = scene_id
         self.category_path = category_path
         self.n_best = n_best
-        self.queue: asyncio.Queue[AudioChunk | None] = asyncio.Queue()
+        # PCM chunks from the client; ``None`` is the end-of-stream sentinel.
+        self.queue: asyncio.Queue[bytes | None] = asyncio.Queue()
         self.task: asyncio.Task[str] | None = None
         self.cancelled = False
 
@@ -173,37 +176,112 @@ async def _send_error(
     )
 
 
-async def _pump_asr(
+def _wrap_pcm_as_wav(pcm16: bytes, sample_rate: int) -> bytes:
+    """Wrap raw 16 kHz mono PCM16 bytes in a minimal WAV header.
+
+    Paraformer's ``transcribe_file`` parses WAV; this is the cheapest bridge
+    from VAD's raw-PCM segments to the ASR backend contract.
+    """
+
+    buf = io.BytesIO()
+    with wave.open(buf, "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(sample_rate)
+        w.writeframes(pcm16)
+    return buf.getvalue()
+
+
+async def _pump_vad_asr(
     websocket: WebSocket,
     asr: ASRBackend,
+    vad: VoiceActivityDetector,
     ctx: _TurnContext,
     session_id: str,
     turn_id: int,
 ) -> str:
-    async def source() -> AsyncIterator[AudioChunk]:
+    """VAD-gated pump (Step B, 方案 A).
+
+    Streams PCM chunks through Silero VAD, forwards ``speech_start`` /
+    ``speech_end`` events to the client, and runs offline ASR
+    (``transcribe_file``) on the first closed segment. Returns the recognized
+    text; empty string means no speech was captured before end-of-stream.
+    """
+
+    events_q: asyncio.Queue[bytes | None] = asyncio.Queue()
+    segments_q: asyncio.Queue[bytes | None] = asyncio.Queue()
+
+    async def fan_out() -> None:
         while True:
             item = await ctx.queue.get()
+            await events_q.put(item)
+            await segments_q.put(item)
+            if item is None:
+                return
+
+    async def events_source() -> AsyncIterator[bytes]:
+        while True:
+            item = await events_q.get()
             if item is None:
                 return
             yield item
 
-    final_text = ""
-    async for partial in asr.stream(source()):
-        if ctx.cancelled:
-            break
-        await websocket.send_json(
-            {
-                "type": "final" if partial.is_final else "partial",
-                "text": partial.text,
-                "start_ms": partial.start_ms,
-                "end_ms": partial.end_ms,
-                "session_id": session_id,
-                "turn_id": turn_id,
-            }
-        )
-        if partial.is_final:
-            final_text = partial.text
-    return final_text
+    async def segments_source() -> AsyncIterator[bytes]:
+        while True:
+            item = await segments_q.get()
+            if item is None:
+                return
+            yield item
+
+    async def forward_events() -> None:
+        async for ev in vad.stream_events(events_source()):
+            if ctx.cancelled:
+                return
+            await websocket.send_json(
+                {
+                    "type": ev.kind,
+                    "at_ms": ev.at_ms,
+                    "session_id": session_id,
+                    "turn_id": turn_id,
+                }
+            )
+
+    async def first_segment() -> SegmentResult | None:
+        async for seg in vad.stream_segments(segments_source()):
+            if ctx.cancelled:
+                return None
+            return seg
+        return None
+
+    fan_task = asyncio.create_task(fan_out())
+    events_task = asyncio.create_task(forward_events())
+    try:
+        seg = await first_segment()
+    finally:
+        # Drain the fan-out / events pipeline so they don't leak tasks.
+        with contextlib.suppress(asyncio.CancelledError, Exception):
+            await fan_task
+        with contextlib.suppress(asyncio.CancelledError, Exception):
+            await events_task
+
+    if ctx.cancelled or seg is None or not seg.pcm16:
+        return ""
+
+    wav_bytes = _wrap_pcm_as_wav(seg.pcm16, seg.sample_rate)
+    transcript = await asr.transcribe_file(wav_bytes)
+    if ctx.cancelled:
+        return ""
+    await websocket.send_json(
+        {
+            "type": "final",
+            "text": transcript.text,
+            "start_ms": seg.start_ms,
+            "end_ms": seg.end_ms,
+            "session_id": session_id,
+            "turn_id": turn_id,
+        }
+    )
+    return transcript.text
 
 
 async def _finalize_turn(
@@ -262,11 +340,20 @@ async def _cancel_turn(ctx: _TurnContext) -> None:
 class _StreamSession:
     """Owns a single WS connection's turn state machine."""
 
-    __slots__ = ("_asr", "_ctx", "_current_turn_id", "_finalize", "_orchestrator", "_session_id")
+    __slots__ = (
+        "_asr", "_ctx", "_current_turn_id", "_finalize",
+        "_orchestrator", "_session_id", "_vad",
+    )
 
-    def __init__(self, orchestrator: Orchestrator, asr: ASRBackend) -> None:
+    def __init__(
+        self,
+        orchestrator: Orchestrator,
+        asr: ASRBackend,
+        vad: VoiceActivityDetector,
+    ) -> None:
         self._orchestrator = orchestrator
         self._asr = asr
+        self._vad = vad
         self._session_id: str | None = None
         self._current_turn_id: int = -1
         self._ctx: _TurnContext | None = None
@@ -275,7 +362,7 @@ class _StreamSession:
     async def handle_pcm(self, data: bytes) -> None:
         if self._ctx is None or self._ctx.cancelled:
             return
-        await self._ctx.queue.put(AudioChunk(pcm16=data, sequence=0))
+        await self._ctx.queue.put(data)
 
     async def handle_stop(self) -> None:
         if self._ctx is None or self._ctx.cancelled:
@@ -327,7 +414,9 @@ class _StreamSession:
             n_best=int(control.get("n_best", 5)),
         )
         ctx.task = asyncio.create_task(
-            _pump_asr(websocket, self._asr, ctx, new_session_id, new_turn_id)
+            _pump_vad_asr(
+                websocket, self._asr, self._vad, ctx, new_session_id, new_turn_id
+            )
         )
         self._ctx = ctx
         self._finalize = asyncio.create_task(
@@ -352,6 +441,7 @@ async def recognize_stream(
     websocket: WebSocket,
     orchestrator: Orchestrator = Depends(get_orchestrator),
     asr: ASRBackend = Depends(get_asr),
+    vad: VoiceActivityDetector = Depends(get_vad),
 ) -> None:
     """Streaming recognition over WebSocket. See ``docs/ws-protocol.md``."""
 
@@ -360,7 +450,7 @@ async def recognize_stream(
         return
     await websocket.accept()
 
-    session = _StreamSession(orchestrator, asr)
+    session = _StreamSession(orchestrator, asr, vad)
     try:
         while True:
             try:
