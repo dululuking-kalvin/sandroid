@@ -35,6 +35,7 @@ DEFAULT_ASR_TOKENS_PATH = _MODELS_ROOT / "paraformer_zh.tokens.txt"
 DEFAULT_ASR_CMVN_PATH = _MODELS_ROOT / "paraformer_zh.am.mvn"
 API_KEY_ENV = "SANDROID_API_KEY"
 DEV_DEFAULT_API_KEY = "dev-insecure-change-me"
+ENV_ENV = "SANDROID_ENV"  # "dev" (default) | "production"
 VAD_BACKEND_ENV = "SANDROID_VAD_BACKEND"  # "silero" (default) | "mock"
 SILERO_PATH_ENV = "SANDROID_SILERO_PATH"
 NLU_BACKEND_ENV = "SANDROID_NLU_BACKEND"  # "embedder" (default) | "stub"
@@ -44,6 +45,18 @@ ASR_BACKEND_ENV = "SANDROID_ASR_BACKEND"  # "paraformer" (default) | "stub"
 ASR_MODEL_PATH_ENV = "SANDROID_ASR_MODEL_PATH"
 ASR_TOKENS_PATH_ENV = "SANDROID_ASR_TOKENS_PATH"
 ASR_CMVN_PATH_ENV = "SANDROID_ASR_CMVN_PATH"
+
+
+def _is_production() -> bool:
+    """Phase 5d gate: dev default falls back to stubs, production must fail loud.
+
+    Dev ergonomics (artifacts not fetched -> boot cleanly with stubs) are
+    preserved; production environments set SANDROID_ENV=production to turn
+    every artifact error into a boot failure so missing models never silently
+    downgrade serving quality.
+    """
+
+    return os.environ.get(ENV_ENV, "dev").lower() == "production"
 
 
 @lru_cache(maxsize=1)
@@ -71,9 +84,9 @@ def get_matcher() -> IntentMatcher:
     try:
         return ONNXEmbedderMatcher(model_path=model_path, tokenizer_path=tokenizer_path)
     except ONNXEmbedderError:
-        # Dev fallback (mirrors the VAD pattern): boot cleanly when artifacts
-        # aren't fetched yet. Production should set SANDROID_NLU_BACKEND
-        # explicitly and fail loud — Phase 5d will tighten the gate.
+        if _is_production():
+            raise
+        # Dev fallback: boot cleanly when artifacts aren't fetched yet.
         return StubMatcher()
 
 
@@ -94,8 +107,9 @@ def get_asr() -> ASRBackend:
             cmvn_path=cmvn_path,
         )
     except ParaformerError:
-        # Dev fallback — mirrors the NLU/VAD pattern. Production should set
-        # SANDROID_ASR_BACKEND explicitly and fail loud; Phase 5d tightens.
+        if _is_production():
+            raise
+        # Dev fallback: boot cleanly when artifacts aren't fetched yet.
         return StubASR()
 
 
@@ -110,10 +124,9 @@ def get_vad() -> VoiceActivityDetector:
     try:
         return SileroVAD(model_path=model_path)
     except SileroVADError:
-        # In dev environments where the ONNX file hasn't been fetched yet,
-        # fall back to MockVAD so the server still boots. Production should
-        # set SANDROID_VAD_BACKEND=silero explicitly and fail loud if the
-        # model is missing — wire that gate in Phase 5d.
+        if _is_production():
+            raise
+        # Dev fallback: boot cleanly when the ONNX file isn't fetched yet.
         return MockVAD()
 
 

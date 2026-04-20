@@ -32,6 +32,7 @@ import numpy as np
 import onnxruntime as ort
 
 from sandroid.models.asr.base import AudioChunk, FinalTranscript, PartialTranscript
+from sandroid.runtime import intra_op_threads
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +79,7 @@ class ParaformerASR:
                 raise ParaformerError(f"Paraformer {label} file missing: {p}")
 
         opts = ort.SessionOptions()
-        opts.intra_op_num_threads = 1
+        opts.intra_op_num_threads = intra_op_threads()
         opts.inter_op_num_threads = 1
         opts.log_severity_level = 3
         self._session = ort.InferenceSession(

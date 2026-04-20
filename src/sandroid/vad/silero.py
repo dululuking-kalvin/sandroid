@@ -18,6 +18,7 @@ from pathlib import Path
 import numpy as np
 import onnxruntime as ort
 
+from sandroid.runtime import intra_op_threads as intra_op_threads_from_env
 from sandroid.vad.base import (
     SegmentEvent,
     SegmentResult,
@@ -43,7 +44,7 @@ class SileroVAD:
         *,
         model_path: Path,
         threshold: float = 0.5,
-        intra_op_threads: int = 1,
+        intra_op_threads: int | None = None,
     ) -> None:
         if not model_path.exists():
             raise SileroVADError(
@@ -51,7 +52,9 @@ class SileroVAD:
                 "Run `python scripts/fetch_models.py` first.",
             )
         options = ort.SessionOptions()
-        options.intra_op_num_threads = intra_op_threads
+        options.intra_op_num_threads = (
+            intra_op_threads if intra_op_threads is not None else intra_op_threads_from_env()
+        )
         options.inter_op_num_threads = 1
         self._session = ort.InferenceSession(
             str(model_path),

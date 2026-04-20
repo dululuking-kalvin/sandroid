@@ -26,6 +26,7 @@ from tokenizers import Tokenizer
 
 from sandroid.core.domain import Intent
 from sandroid.core.matcher import MatchCandidate
+from sandroid.runtime import intra_op_threads
 
 _MAX_SEQ_LEN = 512
 _EMBED_DIM = 512
@@ -40,9 +41,9 @@ class ONNXEmbedderMatcher:
 
     Construction is eager (loads the model + tokenizer) so startup fails loud
     rather than the first request hitting a missing file. Inference is
-    thread-safe via a single lock around the ONNX session because the session
-    is created single-threaded (``intra_op_num_threads=1``) to keep CPU usage
-    predictable under the 10-concurrent-call budget.
+    thread-safe via a single lock around the ONNX session; intra-op thread
+    count is resolved from ``SANDROID_ONNX_INTRA_OP_THREADS`` so operators can
+    tune CPU usage against the 10-concurrent-call budget.
     """
 
     def __init__(self, model_path: Path, tokenizer_path: Path) -> None:
@@ -58,7 +59,7 @@ class ONNXEmbedderMatcher:
             )
 
         options = ort.SessionOptions()
-        options.intra_op_num_threads = 1
+        options.intra_op_num_threads = intra_op_threads()
         options.inter_op_num_threads = 1
         self._session = ort.InferenceSession(
             str(model_path),

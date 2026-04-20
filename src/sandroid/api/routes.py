@@ -266,6 +266,20 @@ async def _pump_vad_asr(
 
     if ctx.cancelled or seg is None or not seg.pcm16:
         return ""
+    return await _stream_segment_through_asr(
+        websocket, asr, seg, ctx, session_id, turn_id,
+    )
+
+
+async def _stream_segment_through_asr(
+    websocket: WebSocket,
+    asr: ASRBackend,
+    seg: SegmentResult,
+    ctx: _TurnContext,
+    session_id: str,
+    turn_id: int,
+) -> str:
+    """Feed one VAD segment into the ASR stream and forward partials/final."""
 
     # Feed the segment PCM into the ASR stream in ~200 ms slices so the
     # pseudo-streaming backend has room to emit mid-segment partials.
@@ -277,21 +291,33 @@ async def _pump_vad_asr(
             yield AudioChunk(pcm16=pcm[start : start + slice_bytes], sequence=seq)
 
     final_text = ""
-    async for partial in asr.stream(segment_chunks()):
+    try:
+        async for partial in asr.stream(segment_chunks()):
+            if ctx.cancelled:
+                return ""
+            await websocket.send_json(
+                {
+                    "type": "final" if partial.is_final else "partial",
+                    "text": partial.text,
+                    "start_ms": seg.start_ms,
+                    "end_ms": seg.start_ms + partial.end_ms,
+                    "session_id": session_id,
+                    "turn_id": turn_id,
+                }
+            )
+            if partial.is_final:
+                final_text = partial.text
+    except asyncio.CancelledError:
+        raise
+    except Exception as exc:
         if ctx.cancelled:
             return ""
-        await websocket.send_json(
-            {
-                "type": "final" if partial.is_final else "partial",
-                "text": partial.text,
-                "start_ms": seg.start_ms,
-                "end_ms": seg.start_ms + partial.end_ms,
-                "session_id": session_id,
-                "turn_id": turn_id,
-            }
+        await _send_error(
+            websocket, session_id, turn_id,
+            "ASR_FAILED", f"ASR backend error: {exc}",
         )
-        if partial.is_final:
-            final_text = partial.text
+        ctx.cancelled = True
+        return ""
     return final_text
 
 
