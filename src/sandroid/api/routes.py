@@ -6,7 +6,9 @@ import asyncio
 import contextlib
 import io
 import json
+import logging
 import os
+import time
 import wave
 from collections.abc import AsyncIterator
 
@@ -30,6 +32,11 @@ from sandroid.api.deps import (
     get_vad,
     require_api_key,
 )
+from sandroid.api.metrics import (
+    recognize_duration_seconds,
+    recognize_requests_total,
+    ws_active_turns,
+)
 from sandroid.core.audio import AudioFormatError, decode_wav
 from sandroid.core.orchestrator import (
     Orchestrator,
@@ -40,6 +47,34 @@ from sandroid.models.asr.base import ASRBackend, AudioChunk
 from sandroid.vad.base import SegmentResult, VoiceActivityDetector
 
 router = APIRouter(prefix="/api/v1", dependencies=[Depends(require_api_key)])
+logger = logging.getLogger(__name__)
+
+
+def _scene_label(scene_id: str | None, category_path: str | None) -> str:
+    """Bounded-cardinality label for metrics — never the raw path string."""
+
+    if scene_id:
+        return scene_id
+    if category_path:
+        return "path"  # collapse all path-based calls into a single bucket
+    return "unknown"
+
+
+def _observe_recognize_result(
+    path: str, scene: str, started_at: float, result: str
+) -> None:
+    duration = time.monotonic() - started_at
+    recognize_requests_total.labels(path=path, scene=scene, result=result).inc()
+    recognize_duration_seconds.labels(path=path).observe(duration)
+    logger.info(
+        "recognize.complete",
+        extra={
+            "path": path,
+            "scene": scene,
+            "result": result,
+            "duration_ms": round(duration * 1000, 2),
+        },
+    )
 
 
 @router.post("/recognize/text", response_model=RecognitionResponse)
@@ -47,23 +82,30 @@ async def recognize_text(
     req: RecognitionRequest,
     orchestrator: Orchestrator = Depends(get_orchestrator),
 ) -> RecognitionResponse:
+    started = time.monotonic()
+    scene = _scene_label(req.scene_id, req.category_path)
     if req.scene_id is None and req.category_path is None:
+        _observe_recognize_result("text", scene, started, "error")
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="either scene_id or category_path is required",
         )
     try:
-        return await orchestrator.recognize(req)
+        response = await orchestrator.recognize(req)
     except KeyError as exc:
+        _observe_recognize_result("text", scene, started, "error")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(exc),
         ) from exc
     except ValueError as exc:
+        _observe_recognize_result("text", scene, started, "error")
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(exc),
         ) from exc
+    _observe_recognize_result("text", scene, started, "ok")
+    return response
 
 
 @router.post("/recognize/file", response_model=RecognitionResponse)
@@ -77,7 +119,10 @@ async def recognize_file(
     asr: ASRBackend = Depends(get_asr),
     vad: VoiceActivityDetector = Depends(get_vad),
 ) -> RecognitionResponse:
+    started = time.monotonic()
+    scene = _scene_label(scene_id, category_path)
     if scene_id is None and category_path is None:
+        _observe_recognize_result("file", scene, started, "error")
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="either scene_id or category_path is required",
@@ -86,6 +131,7 @@ async def recognize_file(
     try:
         buffer = decode_wav(raw)
     except AudioFormatError as exc:
+        _observe_recognize_result("file", scene, started, "error")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
@@ -93,6 +139,7 @@ async def recognize_file(
 
     segments = vad.detect(buffer.pcm16, buffer.sample_rate)
     if not segments:
+        _observe_recognize_result("file", scene, started, "no_speech")
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="no speech detected in audio",
@@ -108,17 +155,21 @@ async def recognize_file(
         n_best=n_best,
     )
     try:
-        return await orchestrator.recognize(req)
+        response = await orchestrator.recognize(req)
     except KeyError as exc:
+        _observe_recognize_result("file", scene, started, "error")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(exc),
         ) from exc
     except ValueError as exc:
+        _observe_recognize_result("file", scene, started, "error")
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(exc),
         ) from exc
+    _observe_recognize_result("file", scene, started, "ok")
+    return response
 
 
 # Top-level WebSocket router without the HTTP API-key dep (WS auth is manual).
@@ -138,7 +189,10 @@ class _TurnContext:
     is cancelled so the client can barge-in without ceremony.
     """
 
-    __slots__ = ("cancelled", "category_path", "n_best", "queue", "scene_id", "task")
+    __slots__ = (
+        "cancelled", "category_path", "metric_recorded", "n_best",
+        "queue", "scene_id", "started_at", "task",
+    )
 
     def __init__(
         self,
@@ -153,6 +207,8 @@ class _TurnContext:
         self.queue: asyncio.Queue[bytes | None] = asyncio.Queue()
         self.task: asyncio.Task[str] | None = None
         self.cancelled = False
+        self.started_at = time.monotonic()
+        self.metric_recorded = False
 
 
 async def _send_error(
@@ -208,6 +264,23 @@ async def _pump_vad_asr(
     text; empty string means no speech was captured before end-of-stream.
     """
 
+    ws_active_turns.inc()
+    try:
+        return await _pump_vad_asr_inner(
+            websocket, asr, vad, ctx, session_id, turn_id
+        )
+    finally:
+        ws_active_turns.dec()
+
+
+async def _pump_vad_asr_inner(
+    websocket: WebSocket,
+    asr: ASRBackend,
+    vad: VoiceActivityDetector,
+    ctx: _TurnContext,
+    session_id: str,
+    turn_id: int,
+) -> str:
     events_q: asyncio.Queue[bytes | None] = asyncio.Queue()
     segments_q: asyncio.Queue[bytes | None] = asyncio.Queue()
 
@@ -331,38 +404,52 @@ async def _finalize_turn(
     """Drain ASR, run the orchestrator, emit `result` or a non-fatal error."""
 
     assert ctx.task is not None
+    scene = _scene_label(ctx.scene_id, ctx.category_path)
+    result = "error"
     try:
-        final_text = await ctx.task
-    except asyncio.CancelledError:
-        return
+        try:
+            final_text = await ctx.task
+        except asyncio.CancelledError:
+            result = "cancelled"
+            raise
 
-    if ctx.cancelled:
-        return
+        if ctx.cancelled:
+            result = "cancelled"
+            return
 
-    if not final_text.strip():
-        await _send_error(websocket, session_id, turn_id, "NO_SPEECH", "no transcript produced")
-        return
+        if not final_text.strip():
+            await _send_error(
+                websocket, session_id, turn_id, "NO_SPEECH", "no transcript produced"
+            )
+            result = "no_speech"
+            return
 
-    req = RecognitionRequest(
-        scene_id=ctx.scene_id,
-        category_path=ctx.category_path,
-        text=final_text,
-        session_id=session_id,
-        n_best=ctx.n_best,
-    )
-    try:
-        response = await orchestrator.recognize(req)
-    except KeyError as exc:
-        await _send_error(websocket, session_id, turn_id, "UNKNOWN_SCENE", str(exc))
-        return
-    except ValueError as exc:
-        await _send_error(websocket, session_id, turn_id, "INVALID_REQUEST", str(exc))
-        return
+        req = RecognitionRequest(
+            scene_id=ctx.scene_id,
+            category_path=ctx.category_path,
+            text=final_text,
+            session_id=session_id,
+            n_best=ctx.n_best,
+        )
+        try:
+            response = await orchestrator.recognize(req)
+        except KeyError as exc:
+            await _send_error(websocket, session_id, turn_id, "UNKNOWN_SCENE", str(exc))
+            return
+        except ValueError as exc:
+            await _send_error(websocket, session_id, turn_id, "INVALID_REQUEST", str(exc))
+            return
 
-    payload = response.model_dump()
-    payload["session_id"] = session_id
-    payload["turn_id"] = turn_id
-    await websocket.send_json({"type": "result", **payload})
+        payload = response.model_dump()
+        payload["session_id"] = session_id
+        payload["turn_id"] = turn_id
+        await websocket.send_json({"type": "result", **payload})
+        result = "ok"
+    finally:
+        if not ctx.metric_recorded:
+            ctx.metric_recorded = True
+            if result != "cancelled":
+                _observe_recognize_result("stream", scene, ctx.started_at, result)
 
 
 async def _cancel_turn(ctx: _TurnContext) -> None:
