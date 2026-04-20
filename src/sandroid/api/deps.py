@@ -16,6 +16,7 @@ from fastapi import Depends, Header, HTTPException, status
 from sandroid.core.matcher import IntentMatcher, StubMatcher
 from sandroid.core.orchestrator import Orchestrator
 from sandroid.models.asr.base import ASRBackend
+from sandroid.models.asr.paraformer import ParaformerASR, ParaformerError
 from sandroid.models.asr.stub import StubASR
 from sandroid.models.nlu.onnx_embedder import ONNXEmbedderError, ONNXEmbedderMatcher
 from sandroid.storage.scene_registry import SceneRegistry
@@ -29,6 +30,9 @@ DEFAULT_SCENES_DIR = Path(__file__).resolve().parents[3] / "configs" / "scenes"
 DEFAULT_SILERO_PATH = _MODELS_ROOT / "silero_vad.onnx"
 DEFAULT_NLU_MODEL_PATH = _MODELS_ROOT / "nlu_embedder_quantized.onnx"
 DEFAULT_NLU_TOKENIZER_PATH = _MODELS_ROOT / "nlu_tokenizer.json"
+DEFAULT_ASR_MODEL_PATH = _MODELS_ROOT / "paraformer_zh.int8.onnx"
+DEFAULT_ASR_TOKENS_PATH = _MODELS_ROOT / "paraformer_zh.tokens.txt"
+DEFAULT_ASR_CMVN_PATH = _MODELS_ROOT / "paraformer_zh.am.mvn"
 API_KEY_ENV = "SANDROID_API_KEY"
 DEV_DEFAULT_API_KEY = "dev-insecure-change-me"
 VAD_BACKEND_ENV = "SANDROID_VAD_BACKEND"  # "silero" (default) | "mock"
@@ -36,6 +40,10 @@ SILERO_PATH_ENV = "SANDROID_SILERO_PATH"
 NLU_BACKEND_ENV = "SANDROID_NLU_BACKEND"  # "embedder" (default) | "stub"
 NLU_MODEL_PATH_ENV = "SANDROID_NLU_MODEL_PATH"
 NLU_TOKENIZER_PATH_ENV = "SANDROID_NLU_TOKENIZER_PATH"
+ASR_BACKEND_ENV = "SANDROID_ASR_BACKEND"  # "paraformer" (default) | "stub"
+ASR_MODEL_PATH_ENV = "SANDROID_ASR_MODEL_PATH"
+ASR_TOKENS_PATH_ENV = "SANDROID_ASR_TOKENS_PATH"
+ASR_CMVN_PATH_ENV = "SANDROID_ASR_CMVN_PATH"
 
 
 @lru_cache(maxsize=1)
@@ -71,7 +79,24 @@ def get_matcher() -> IntentMatcher:
 
 @lru_cache(maxsize=1)
 def get_asr() -> ASRBackend:
-    return StubASR()
+    backend = os.environ.get(ASR_BACKEND_ENV, "paraformer").lower()
+    if backend == "stub":
+        return StubASR()
+    if backend != "paraformer":
+        raise ValueError(f"unknown ASR backend {backend!r}; expected 'paraformer' or 'stub'")
+    model_path = Path(os.environ.get(ASR_MODEL_PATH_ENV, str(DEFAULT_ASR_MODEL_PATH)))
+    tokens_path = Path(os.environ.get(ASR_TOKENS_PATH_ENV, str(DEFAULT_ASR_TOKENS_PATH)))
+    cmvn_path = Path(os.environ.get(ASR_CMVN_PATH_ENV, str(DEFAULT_ASR_CMVN_PATH)))
+    try:
+        return ParaformerASR(
+            model_path=model_path,
+            tokens_path=tokens_path,
+            cmvn_path=cmvn_path,
+        )
+    except ParaformerError:
+        # Dev fallback — mirrors the NLU/VAD pattern. Production should set
+        # SANDROID_ASR_BACKEND explicitly and fail loud; Phase 5d tightens.
+        return StubASR()
 
 
 @lru_cache(maxsize=1)

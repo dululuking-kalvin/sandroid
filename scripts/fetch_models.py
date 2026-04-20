@@ -52,6 +52,28 @@ MODELS: tuple[ModelSpec, ...] = (
         sha256="48cea5d44424912a6fd1ea647bf4fe50b55ab8b1e5879c3275f80e339e8fae26",
         dest=MODELS_DIR / "nlu_tokenizer.json",
     ),
+    # Paraformer-zh offline ASR (Phase 5c Step A). INT8 ONNX export from
+    # csukuangfj/paraformer-onnxruntime-python-example — the raw FunASR export
+    # (unlike the sherpa-onnx repackaged variant, which needs the sherpa-onnx
+    # runtime). Three files travel together: model + tokens + CMVN.
+    ModelSpec(
+        name="asr_paraformer_model",
+        url="https://huggingface.co/csukuangfj/paraformer-onnxruntime-python-example/resolve/bbf29cf22ede51f541c052af8f8e77fc54c76e21/model.int8.onnx",
+        sha256="9ada9127ca5b82320385ac12340eb8b05dee64fd45cf8cf593ec693826ec2fd7",
+        dest=MODELS_DIR / "paraformer_zh.int8.onnx",
+    ),
+    ModelSpec(
+        name="asr_paraformer_tokens",
+        url="https://huggingface.co/csukuangfj/paraformer-onnxruntime-python-example/resolve/bbf29cf22ede51f541c052af8f8e77fc54c76e21/tokens.txt",
+        sha256="59aba8873a2ed1e122c25fee421e25f283b63290efbde85c1f01a853d83cb6e6",
+        dest=MODELS_DIR / "paraformer_zh.tokens.txt",
+    ),
+    ModelSpec(
+        name="asr_paraformer_cmvn",
+        url="https://huggingface.co/csukuangfj/paraformer-onnxruntime-python-example/resolve/bbf29cf22ede51f541c052af8f8e77fc54c76e21/am.mvn",
+        sha256="29b3c740a2c0cfc6b308126d31d7f265fa2be74f3bb095cd2f143ea970896ae5",
+        dest=MODELS_DIR / "paraformer_zh.am.mvn",
+    ),
 )
 
 
