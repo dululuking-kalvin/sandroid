@@ -36,7 +36,7 @@ from sandroid.core.orchestrator import (
     RecognitionRequest,
     RecognitionResponse,
 )
-from sandroid.models.asr.base import ASRBackend
+from sandroid.models.asr.base import ASRBackend, AudioChunk
 from sandroid.vad.base import SegmentResult, VoiceActivityDetector
 
 router = APIRouter(prefix="/api/v1", dependencies=[Depends(require_api_key)])
@@ -267,21 +267,32 @@ async def _pump_vad_asr(
     if ctx.cancelled or seg is None or not seg.pcm16:
         return ""
 
-    wav_bytes = _wrap_pcm_as_wav(seg.pcm16, seg.sample_rate)
-    transcript = await asr.transcribe_file(wav_bytes)
-    if ctx.cancelled:
-        return ""
-    await websocket.send_json(
-        {
-            "type": "final",
-            "text": transcript.text,
-            "start_ms": seg.start_ms,
-            "end_ms": seg.end_ms,
-            "session_id": session_id,
-            "turn_id": turn_id,
-        }
-    )
-    return transcript.text
+    # Feed the segment PCM into the ASR stream in ~200 ms slices so the
+    # pseudo-streaming backend has room to emit mid-segment partials.
+    slice_bytes = max(2, (seg.sample_rate // 5) * 2)  # 200 ms of PCM16
+
+    async def segment_chunks() -> AsyncIterator[AudioChunk]:
+        pcm = seg.pcm16
+        for seq, start in enumerate(range(0, len(pcm), slice_bytes)):
+            yield AudioChunk(pcm16=pcm[start : start + slice_bytes], sequence=seq)
+
+    final_text = ""
+    async for partial in asr.stream(segment_chunks()):
+        if ctx.cancelled:
+            return ""
+        await websocket.send_json(
+            {
+                "type": "final" if partial.is_final else "partial",
+                "text": partial.text,
+                "start_ms": seg.start_ms,
+                "end_ms": seg.start_ms + partial.end_ms,
+                "session_id": session_id,
+                "turn_id": turn_id,
+            }
+        )
+        if partial.is_final:
+            final_text = partial.text
+    return final_text
 
 
 async def _finalize_turn(

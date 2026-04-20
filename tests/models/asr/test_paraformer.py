@@ -124,18 +124,32 @@ def test_missing_model_raises() -> None:
         )
 
 
-def test_stream_not_implemented(asr: ParaformerASR) -> None:
-    """Streaming is Step C — attempts must fail loudly, not silently stub out."""
+def test_stream_emits_partials_and_final(asr: ParaformerASR) -> None:
+    """Pseudo-streaming: chunked PCM in -> partials + one final out."""
 
-    async def _empty() -> AsyncIterator[AudioChunk]:
-        if False:  # pragma: no cover — shape only
-            yield AudioChunk(pcm16=b"", sequence=0)
+    # Strip the 44-byte WAV header; feed raw PCM16 in 200 ms slices.
+    wav = _FIXTURE_WAV.read_bytes()
+    with wave.open(BytesIO(wav), "rb") as r:
+        pcm = r.readframes(r.getnframes())
+    slice_bytes = (16000 // 5) * 2  # 200 ms
 
-    async def _advance() -> None:
-        # stream is an async generator function — calling it doesn't run it;
-        # we have to advance the iterator to trigger the raise.
-        agen = asr.stream(_empty())
-        await agen.__anext__()
+    async def _chunks() -> AsyncIterator[AudioChunk]:
+        for i, start in enumerate(range(0, len(pcm), slice_bytes)):
+            yield AudioChunk(pcm16=pcm[start : start + slice_bytes], sequence=i)
 
-    with pytest.raises(NotImplementedError, match="Step C"):
-        asyncio.run(_advance())
+    async def _collect() -> list[tuple[bool, str]]:
+        out: list[tuple[bool, str]] = []
+        async for p in asr.stream(_chunks()):
+            out.append((p.is_final, p.text))
+        return out
+
+    results = asyncio.run(_collect())
+    assert results, "expected at least one frame"
+    finals = [r for r in results if r[0]]
+    partials = [r for r in results if not r[0]]
+    assert len(finals) == 1, "exactly one is_final=True frame per stream"
+    assert partials, "expected at least one partial before final"
+    final_text = finals[0][1]
+    assert final_text, "final transcript must be non-empty for the fixture"
+    for ch in final_text:
+        assert "\u4e00" <= ch <= "\u9fff", f"non-Chinese char in final: {ch!r}"

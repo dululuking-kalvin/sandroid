@@ -42,6 +42,10 @@ _LFR_SHIFT = 6
 _STACKED_DIM = _FBANK_NUM_BINS * _LFR_WINDOW  # 560
 _BLANK_ID = 0
 _EOS_ID = 2
+# Re-decode the accumulated PCM every _PARTIAL_EMIT_MS of fresh audio.
+# 800 ms balances CPU (we re-run the full non-autoregressive decoder each
+# time) against partial responsiveness for the IVR use case.
+_PARTIAL_EMIT_MS = 800
 
 
 class ParaformerError(RuntimeError):
@@ -62,7 +66,9 @@ class ParaformerASR:
         model_path: Path,
         tokens_path: Path,
         cmvn_path: Path,
+        partial_emit_ms: int = _PARTIAL_EMIT_MS,
     ) -> None:
+        self._partial_emit_ms = partial_emit_ms
         for p, label in (
             (model_path, "model"),
             (tokens_path, "tokens"),
@@ -137,12 +143,55 @@ class ParaformerASR:
         self,
         chunks: AsyncIterator[AudioChunk],
     ) -> AsyncIterator[PartialTranscript]:
-        del chunks
-        raise NotImplementedError(
-            "ParaformerASR.stream lands in Phase 5c Step C; use StubASR for streaming tests"
+        """Pseudo-streaming: accumulate PCM, re-decode periodically, emit partials.
+
+        Paraformer is a non-autoregressive offline decoder — there is no
+        incremental state to advance. We trade CPU for responsiveness: every
+        ``partial_emit_ms`` of fresh audio we re-run the full pipeline on the
+        accumulated buffer and emit a ``PartialTranscript``. On stream end we
+        emit one ``is_final=True`` frame. Step D (if we need sub-200ms tail
+        latency) is swapping in a real streaming model behind this interface.
+        """
+
+        accumulated = bytearray()
+        emitted_ms = 0
+        last_text = ""
+        async for chunk in chunks:
+            if not chunk.pcm16:
+                continue
+            accumulated += chunk.pcm16
+            buffered_ms = len(accumulated) // 2 * 1000 // _SAMPLE_RATE
+            if buffered_ms - emitted_ms < self._partial_emit_ms:
+                continue
+            text = self._decode_pcm_buffer(bytes(accumulated))
+            emitted_ms = buffered_ms
+            last_text = text
+            yield PartialTranscript(
+                text=text,
+                is_final=False,
+                start_ms=0,
+                end_ms=buffered_ms,
+            )
+
+        buffered_ms = len(accumulated) // 2 * 1000 // _SAMPLE_RATE
+        final_text = self._decode_pcm_buffer(bytes(accumulated)) if accumulated else last_text
+        yield PartialTranscript(
+            text=final_text,
+            is_final=True,
+            start_ms=0,
+            end_ms=buffered_ms,
         )
-        if False:  # pragma: no cover — AsyncIterator shape
-            yield PartialTranscript(text="", is_final=False, start_ms=0, end_ms=0)
+
+    def _decode_pcm_buffer(self, pcm16: bytes) -> str:
+        """Run features + ONNX + argmax over a raw-PCM buffer. Used by stream()."""
+
+        if not pcm16:
+            return ""
+        pcm_float = np.frombuffer(pcm16, dtype=np.int16).astype(np.float32) / 32768.0
+        feats = self._features(pcm_float)
+        if feats.shape[0] == 0:
+            return ""
+        return self._run_and_decode(feats)
 
     @staticmethod
     def _decode_wav(wav_bytes: bytes) -> np.ndarray:

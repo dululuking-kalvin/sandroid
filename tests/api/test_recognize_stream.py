@@ -60,11 +60,14 @@ def test_stream_happy_path() -> None:
         messages = _drain_until(ws, {"result", "error"})
 
     kinds = [m["type"] for m in messages]
-    # 方案 A: VAD emits boundary events; ASR runs on the closed segment
-    # via transcribe_file, so we get exactly one `final` per turn.
+    # 方案 A + Step C pseudo-streaming: VAD emits boundary events; the first
+    # closed segment is then streamed into asr.stream() which yields partials
+    # followed by exactly one final.
     assert "speech_start" in kinds
     assert "speech_end" in kinds
+    assert "partial" in kinds
     assert "final" in kinds
+    assert kinds.count("final") == 1
     assert kinds[-1] == "result"
     result = messages[-1]
     assert result["top"]["intent_id"] == "greeting"
