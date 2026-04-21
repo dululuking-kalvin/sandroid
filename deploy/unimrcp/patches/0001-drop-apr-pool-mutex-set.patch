@@ -1,0 +1,25 @@
+Subject: [PATCH] drop apr_pool_mutex_set call for APR >= 1.7
+
+apr_pool_mutex_set() only exists on APR development branches between
+1.x and 2.0 (and was never shipped in any released APR). UniMRCP 1.8.0
+calls it unconditionally inside OWN_ALLOCATOR_PER_POOL, which breaks
+the link step on every distro-packaged APR (1.6, 1.7).
+
+apr_allocator_mutex_set() on the preceding line already gives the
+allocator the mutex it needs. Dropping the call preserves behavior.
+
+Tested on Ubuntu 22.04, APR 1.7.0.
+
+Apply from the UniMRCP source root with:
+    patch -p1 < 0001-drop-apr-pool-mutex-set.patch
+
+--- a/libs/apr-toolkit/src/apt_pool.c
++++ b/libs/apr-toolkit/src/apt_pool.c
+@@ -38,7 +38,6 @@
+ 			apr_allocator_owner_set(allocator,pool);
+ 			apr_thread_mutex_create(&mutex,APR_THREAD_MUTEX_NESTED,pool);
+ 			apr_allocator_mutex_set(allocator,mutex);
+-			apr_pool_mutex_set(pool,mutex); 
+ 		}
+ 	}
+ #else
