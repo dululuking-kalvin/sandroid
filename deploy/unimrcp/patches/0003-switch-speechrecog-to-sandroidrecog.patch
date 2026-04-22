@@ -1,0 +1,32 @@
+Subject: [PATCH] switch default speechrecog engine to Sandroid-Recog-1
+
+Disables the bundled Demo-Recog engine and registers Sandroid-Recog-1
+in its place inside the plugin-factory. The commented
+resource-engine-map example is also updated so operators who enable
+explicit mapping point at Sandroid-Recog-1 by default.
+
+Apply against /opt/unimrcp/conf/unimrcpserver.xml after UniMRCP is
+installed (the file lives at runtime, not in the source tree):
+    patch -p0 < 0003-switch-speechrecog-to-sandroidrecog.patch
+
+--- unimrcpserver.xml.orig
++++ unimrcpserver.xml
+@@ -122,7 +122,8 @@
+     <!-- Factory of plugins (MRCP engines) -->
+     <plugin-factory>
+       <engine id="Demo-Synth-1" name="demosynth" enable="true"/>
+-      <engine id="Demo-Recog-1" name="demorecog" enable="true"/>
++      <engine id="Demo-Recog-1" name="demorecog" enable="false"/>
++      <engine id="Sandroid-Recog-1" name="sandroidrecog" enable="true"/>
+       <engine id="Demo-Verifier-1" name="demoverifier" enable="true"/>
+       <engine id="Recorder-1" name="mrcprecorder" enable="true"/>
+
+@@ -184,7 +185,7 @@
+       <!--
+       <resource-engine-map>
+         <resource id="speechsynth" engine="Demo-Synth-1"/>
+-        <resource id="speechrecog" engine="Demo-Recog-1">
++        <resource id="speechrecog" engine="Sandroid-Recog-1">
+           <attrib name="n1" value="v1"/>
+           <attrib name="n2" value="v2"/>
+         </resource>

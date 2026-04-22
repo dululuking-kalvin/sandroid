@@ -73,6 +73,31 @@ LD_LIBRARY_PATH=/opt/unimrcp/lib /opt/unimrcp/bin/umc -v
 
 Both must print `1.8.0`.
 
+## Running the server
+
+The server must be started with an explicit root directory — `dirlayout.xml`
+uses `rootdir="../"`, which resolves against the process CWD. Daemon mode
+sets CWD to `/`, so the relative path fails unless `-r` is given.
+
+```bash
+LD_LIBRARY_PATH=/opt/unimrcp/lib \
+    /opt/unimrcp/bin/unimrcpserver -r /opt/unimrcp -d
+```
+
+Flags:
+- `-r /opt/unimrcp` — root directory (makes `../conf` etc. resolve correctly)
+- `-d` — daemonize (detach from tty; logs go to `/opt/unimrcp/log/`)
+
+Verify:
+
+```bash
+ss -tlnp | grep -E '1544|1554|8060'   # MRCPv2, RTSP, SIP
+tail -F /opt/unimrcp/log/unimrcpserver_current.log
+```
+
+Without `-r` the process starts but binds zero ports and writes no logs —
+`dirlayout` silently fails to load the config. This is the #1 footgun.
+
 ## Layout
 
 ```

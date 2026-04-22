@@ -1,0 +1,49 @@
+Subject: [PATCH] register sandroid-recog plugin in UniMRCP build system
+
+Adds the sandroid-recog plugin to UniMRCP's autotools build:
+  - configure.ac: UNI_PLUGIN_ENABLED(sandroidrecog) +
+    AM_CONDITIONAL([SANDROIDRECOG_PLUGIN],...) + AC_CONFIG_FILES entry
+  - plugins/Makefile.am: add sandroid-recog to SUBDIRS when enabled
+
+Source for the plugin itself lives at native/unimrcp-plugin/ in the
+sandroid repo and is rsync'd into plugins/sandroid-recog/ before
+running bootstrap + configure. See deploy/unimrcp/install-plugin.sh.
+
+Tested on Ubuntu 22.04, UniMRCP 1.8.0.
+
+Apply from the UniMRCP source root with:
+    patch -p1 < 0002-add-sandroid-recog-plugin.patch
+
+diff --git a/configure.ac b/configure.ac
+--- a/configure.ac
++++ b/configure.ac
+@@ -207,6 +207,11 @@ UNI_PLUGIN_ENABLED(recorder)
+
+ AM_CONDITIONAL([RECORDER_PLUGIN],[test "${enable_recorder_plugin}" = "yes"])
+
++dnl Sandroid recognizer plugin.
++UNI_PLUGIN_ENABLED(sandroidrecog)
++
++AM_CONDITIONAL([SANDROIDRECOG_PLUGIN],[test "${enable_sandroidrecog_plugin}" = "yes"])
++
+ dnl Enable test suites.
+ AC_ARG_ENABLE(test-suites,
+     [AC_HELP_STRING([--enable-test-suites  ],[build test suites])],
+@@ -236,6 +241,7 @@ AC_CONFIG_FILES([
+     plugins/mrcp-recorder/Makefile
+     plugins/demo-synth/Makefile
+     plugins/demo-recog/Makefile
++    plugins/sandroid-recog/Makefile
+     plugins/demo-verifier/Makefile
+     platforms/Makefile
+     platforms/libunimrcp-server/Makefile
+diff --git a/plugins/Makefile.am b/plugins/Makefile.am
+--- a/plugins/Makefile.am
++++ b/plugins/Makefile.am
+@@ -17,3 +17,6 @@ endif
+ if RECORDER_PLUGIN
+ SUBDIRS               += mrcp-recorder
+ endif
++if SANDROIDRECOG_PLUGIN
++SUBDIRS               += sandroid-recog
++endif
