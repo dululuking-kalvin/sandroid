@@ -54,6 +54,25 @@ echo "==> Apply runtime config patch (unimrcpserver.xml)"
 cd "$(dirname "$SERVER_XML")"
 patch -p0 --forward --silent < "$PATCH_DIR/0003-switch-speechrecog-to-sandroidrecog.patch" || true
 
+# Optional: install the Python bridge systemd unit. Set INSTALL_BRIDGE=1 to enable.
+if [[ "${INSTALL_BRIDGE:-0}" == "1" ]]; then
+    SANDROID_PREFIX="${SANDROID_PREFIX:-/opt/sandroid}"
+    echo "==> Stage Python bridge sources -> $SANDROID_PREFIX/src"
+    mkdir -p "$SANDROID_PREFIX/src" "$SANDROID_PREFIX/logs"
+    rsync -a --delete \
+        --include='sandroid/' \
+        --include='sandroid/**' \
+        --exclude='*' \
+        "$SANDROID_REPO/src/" "$SANDROID_PREFIX/src/"
+
+    echo "==> Install systemd unit -> /etc/systemd/system/sandroid-bridge.service"
+    install -m 0644 "$SANDROID_REPO/deploy/unimrcp/bridge.service" \
+        /etc/systemd/system/sandroid-bridge.service
+    systemctl daemon-reload
+    systemctl enable --now sandroid-bridge.service
+    systemctl --no-pager status sandroid-bridge.service | head -10 || true
+fi
+
 echo
 echo "Done. To start the server:"
 echo "  LD_LIBRARY_PATH=$UNIMRCP_PREFIX/lib $UNIMRCP_PREFIX/bin/unimrcpserver -r $UNIMRCP_PREFIX -d"
@@ -61,3 +80,7 @@ echo
 echo "Expected log lines:"
 echo "  Load Plugin [Sandroid-Recog-1] [$UNIMRCP_PREFIX/plugin/sandroidrecog.so]"
 echo "  Associate Resource [speechrecog] to Engine [Sandroid-Recog-1]"
+echo
+echo "If INSTALL_BRIDGE=1 was set, verify the Python bridge:"
+echo "  systemctl status sandroid-bridge"
+echo "  ls -l /var/run/sandroid/bridge.sock"

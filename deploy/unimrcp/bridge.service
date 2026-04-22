@@ -1,0 +1,23 @@
+[Unit]
+Description=Sandroid MRCP bridge (UniMRCP plugin <-> Python ASR)
+After=network.target
+Before=unimrcp.service
+
+[Service]
+Type=simple
+# Runtime socket dir (/var/run is tmpfs; recreate on boot)
+RuntimeDirectory=sandroid
+RuntimeDirectoryMode=0755
+Environment=PYTHONPATH=/opt/sandroid/src
+Environment=SANDROID_BRIDGE_SOCK=/var/run/sandroid/bridge.sock
+Environment=SANDROID_BRIDGE_LOG=INFO
+ExecStart=/usr/bin/python3 -m sandroid.adapters.mrcp.bridge
+Restart=on-failure
+RestartSec=2
+# stdin must be /dev/null so nothing is mistaken for server commands
+StandardInput=null
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

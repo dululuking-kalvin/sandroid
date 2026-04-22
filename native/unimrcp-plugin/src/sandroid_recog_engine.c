@@ -31,6 +31,7 @@
 #include "mpf_activity_detector.h"
 #include "apt_consumer_task.h"
 #include "apt_log.h"
+#include "bridge_client.h"
 
 #define RECOG_ENGINE_TASK_NAME "Sandroid Recog Engine"
 
@@ -104,6 +105,14 @@ struct sandroid_recog_channel_t {
 	mpf_activity_detector_t *detector;
 	/** File to write utterance to */
 	FILE                    *audio_out;
+	/** Bridge connection to Python ASR (NULL => use canned result.xml) */
+	sbr_conn_t              *bridge;
+	/** When true, fall back to reading result.xml instead of bridge */
+	apt_bool_t               use_canned;
+	/** True after START frame has been sent on this channel */
+	apt_bool_t               bridge_started;
+	/** True after EOS has been sent — avoid double-send */
+	apt_bool_t               bridge_eos_sent;
 };
 
 typedef enum {
@@ -209,6 +218,10 @@ static mrcp_engine_channel_t* sandroid_recog_engine_channel_create(mrcp_engine_t
 	recog_channel->stop_response = NULL;
 	recog_channel->detector = mpf_activity_detector_create(pool);
 	recog_channel->audio_out = NULL;
+	recog_channel->bridge = NULL;
+	recog_channel->use_canned = FALSE;
+	recog_channel->bridge_started = FALSE;
+	recog_channel->bridge_eos_sent = FALSE;
 
 	capabilities = mpf_sink_stream_capabilities_create(pool);
 	mpf_codec_capabilities_add(
@@ -314,6 +327,26 @@ static apt_bool_t sandroid_recog_channel_recognize(mrcp_engine_channel_t *channe
 		}
 	}
 
+	/* If bridge is up, send START frame before we expect AUDIO. */
+	if(recog_channel->bridge && !recog_channel->bridge_started) {
+		const char *channel_id = request->channel_id.session_id.buf;
+		if(sbr_send_start(recog_channel->bridge,
+		                  channel_id,
+		                  channel_id,
+		                  descriptor->sampling_rate,
+		                  "LPCM") == 0) {
+			recog_channel->bridge_started = TRUE;
+			recog_channel->bridge_eos_sent = FALSE;
+		}
+		else {
+			apt_log(RECOG_LOG_MARK,APT_PRIO_WARNING,
+				"Bridge START failed; falling back to canned result");
+			sbr_close(recog_channel->bridge);
+			recog_channel->bridge = NULL;
+			recog_channel->use_canned = TRUE;
+		}
+	}
+
 	response->start_line.request_state = MRCP_REQUEST_STATE_INPROGRESS;
 	/* send asynchronous response */
 	mrcp_engine_channel_message_send(channel,response);
@@ -408,33 +441,52 @@ static apt_bool_t sandroid_recog_start_of_input(sandroid_recog_channel_t *recog_
 	return mrcp_engine_channel_message_send(recog_channel->channel,message);
 }
 
-/* Load sandroid recognition result */
+/* Load sandroid recognition result — bridge first, canned file fallback. */
 static apt_bool_t sandroid_recog_result_load(sandroid_recog_channel_t *recog_channel, mrcp_message_t *message)
 {
-	FILE *file;
-	mrcp_engine_channel_t *channel = recog_channel->channel;
-	const apt_dir_layout_t *dir_layout = channel->engine->dir_layout;
-	char *file_path = apt_datadir_filepath_get(dir_layout,"result.xml",message->pool);
-	if(!file_path) {
-		return FALSE;
-	}
-	
-	/* read the sandroid result from file */
-	file = fopen(file_path,"r");
-	if(file) {
-		mrcp_generic_header_t *generic_header;
-		char text[1024];
-		apr_size_t size;
-		size = fread(text,1,sizeof(text),file);
-		apt_string_assign_n(&message->body,text,size,message->pool);
-		fclose(file);
+	mrcp_generic_header_t *generic_header;
 
-		/* get/allocate generic header */
-		generic_header = mrcp_generic_header_prepare(message);
-		if(generic_header) {
-			/* set content types */
-			apt_string_assign(&generic_header->content_type,"application/x-nlsml",message->pool);
-			mrcp_generic_header_property_add(message,GENERIC_HEADER_CONTENT_TYPE);
+	/* Try bridge first. */
+	if(recog_channel->bridge && recog_channel->bridge_eos_sent) {
+		const char *nlsml = NULL;
+		apr_size_t nbytes = 0;
+		int rc = sbr_wait_result(recog_channel->bridge, message->pool, 10000, &nlsml, &nbytes);
+		if(rc == 0 && nlsml && nbytes > 0) {
+			apt_string_assign_n(&message->body, nlsml, nbytes, message->pool);
+			generic_header = mrcp_generic_header_prepare(message);
+			if(generic_header) {
+				apt_string_assign(&generic_header->content_type,"application/x-nlsml",message->pool);
+				mrcp_generic_header_property_add(message,GENERIC_HEADER_CONTENT_TYPE);
+			}
+			apt_log(RECOG_LOG_MARK,APT_PRIO_INFO,"Loaded NLSML from bridge (%"APR_SIZE_T_FMT" bytes)",nbytes);
+			return TRUE;
+		}
+		apt_log(RECOG_LOG_MARK,APT_PRIO_WARNING,
+			"Bridge wait_result failed (rc=%d); falling back to canned result",rc);
+	}
+
+	/* Canned fallback — read data/result.xml (legacy path). */
+	{
+		mrcp_engine_channel_t *channel = recog_channel->channel;
+		const apt_dir_layout_t *dir_layout = channel->engine->dir_layout;
+		char *file_path = apt_datadir_filepath_get(dir_layout,"result.xml",message->pool);
+		FILE *file;
+		if(!file_path) {
+			return FALSE;
+		}
+		file = fopen(file_path,"r");
+		if(file) {
+			char text[1024];
+			apr_size_t size;
+			size = fread(text,1,sizeof(text),file);
+			apt_string_assign_n(&message->body,text,size,message->pool);
+			fclose(file);
+
+			generic_header = mrcp_generic_header_prepare(message);
+			if(generic_header) {
+				apt_string_assign(&generic_header->content_type,"application/x-nlsml",message->pool);
+				mrcp_generic_header_property_add(message,GENERIC_HEADER_CONTENT_TYPE);
+			}
 		}
 	}
 	return TRUE;
@@ -495,6 +547,20 @@ static apt_bool_t sandroid_recog_stream_write(mpf_audio_stream_t *stream, const 
 			case MPF_DETECTOR_EVENT_INACTIVITY:
 				apt_log(RECOG_LOG_MARK,APT_PRIO_INFO,"Detected Voice Inactivity " APT_SIDRES_FMT,
 					MRCP_MESSAGE_SIDRES(recog_channel->recog_request));
+				/* Signal end-of-speech to bridge before completing. */
+				if(recog_channel->bridge && recog_channel->bridge_started &&
+				   !recog_channel->bridge_eos_sent) {
+					if(sbr_send_eos(recog_channel->bridge) == 0) {
+						recog_channel->bridge_eos_sent = TRUE;
+					}
+					else {
+						apt_log(RECOG_LOG_MARK,APT_PRIO_WARNING,
+							"Bridge send_eos failed; canned fallback");
+						sbr_close(recog_channel->bridge);
+						recog_channel->bridge = NULL;
+						recog_channel->use_canned = TRUE;
+					}
+				}
 				sandroid_recog_recognition_complete(recog_channel,RECOGNIZER_COMPLETION_CAUSE_SUCCESS);
 				break;
 			case MPF_DETECTOR_EVENT_NOINPUT:
@@ -527,6 +593,20 @@ static apt_bool_t sandroid_recog_stream_write(mpf_audio_stream_t *stream, const 
 		if(recog_channel->audio_out) {
 			fwrite(frame->codec_frame.buffer,1,frame->codec_frame.size,recog_channel->audio_out);
 		}
+		/* Forward audio to Python bridge if up. */
+		if(recog_channel->bridge && recog_channel->bridge_started &&
+		   !recog_channel->bridge_eos_sent &&
+		   (frame->type & MEDIA_FRAME_TYPE_AUDIO) == MEDIA_FRAME_TYPE_AUDIO) {
+			if(sbr_send_audio(recog_channel->bridge,
+			                  frame->codec_frame.buffer,
+			                  frame->codec_frame.size) < 0) {
+				apt_log(RECOG_LOG_MARK,APT_PRIO_WARNING,
+					"Bridge send_audio failed; will fall back to canned result");
+				sbr_close(recog_channel->bridge);
+				recog_channel->bridge = NULL;
+				recog_channel->use_canned = TRUE;
+			}
+		}
 	}
 	return TRUE;
 }
@@ -556,9 +636,20 @@ static apt_bool_t sandroid_recog_msg_process(apt_task_t *task, apt_task_msg_t *m
 	sandroid_recog_msg_t *sandroid_msg = (sandroid_recog_msg_t*)msg->data;
 	switch(sandroid_msg->type) {
 		case SANDROID_RECOG_MSG_OPEN_CHANNEL:
-			/* open channel and send asynch response */
+		{
+			sandroid_recog_channel_t *recog_channel = sandroid_msg->channel->method_obj;
+			if(sbr_connect(sandroid_msg->channel->pool, NULL, &recog_channel->bridge) != 0) {
+				apt_log(RECOG_LOG_MARK,APT_PRIO_WARNING,
+					"Bridge connect failed; falling back to canned result.xml");
+				recog_channel->bridge = NULL;
+				recog_channel->use_canned = TRUE;
+			}
+			else {
+				apt_log(RECOG_LOG_MARK,APT_PRIO_INFO,"Bridge connected");
+			}
 			mrcp_engine_channel_open_respond(sandroid_msg->channel,TRUE);
 			break;
+		}
 		case SANDROID_RECOG_MSG_CLOSE_CHANNEL:
 		{
 			/* close channel, make sure there is no activity and send asynch response */
@@ -566,6 +657,11 @@ static apt_bool_t sandroid_recog_msg_process(apt_task_t *task, apt_task_msg_t *m
 			if(recog_channel->audio_out) {
 				fclose(recog_channel->audio_out);
 				recog_channel->audio_out = NULL;
+			}
+			if(recog_channel->bridge) {
+				sbr_send_stop(recog_channel->bridge);
+				sbr_close(recog_channel->bridge);
+				recog_channel->bridge = NULL;
 			}
 
 			mrcp_engine_channel_close_respond(sandroid_msg->channel);

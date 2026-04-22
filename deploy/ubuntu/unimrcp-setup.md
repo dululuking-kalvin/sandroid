@@ -124,3 +124,47 @@ UniMRCP 1.8.0 is from 2022. If future work wants a newer release (there
 is no official successor as of Apr 2026, but the `master` branch has had
 fixes), the patch series lives under `deploy/unimrcp/patches/` and can be
 replayed against a fresh clone.
+
+## Bringing up the sandroid-recog plugin + Python bridge
+
+After UniMRCP is installed, deploy the sandroid plugin and the Python
+bridge that serves ASR results:
+
+```bash
+cd /path/to/sandroid
+INSTALL_BRIDGE=1 \
+UNIMRCP_SRC=/opt/unimrcp-src \
+UNIMRCP_PREFIX=/opt/unimrcp \
+SANDROID_PREFIX=/opt/sandroid \
+sudo -E deploy/unimrcp/install-plugin.sh
+```
+
+`INSTALL_BRIDGE=1` additionally:
+- Syncs `src/sandroid/` → `/opt/sandroid/src/`
+- Installs `deploy/unimrcp/bridge.service` as `sandroid-bridge.service`
+- `systemctl enable --now sandroid-bridge` — the bridge listens on
+  `/var/run/sandroid/bridge.sock` before UniMRCP starts.
+
+Start UniMRCP (daemon mode — the `-d` flag is required; without it the
+process reads stdin as commands and spams "unknown command"):
+
+```bash
+LD_LIBRARY_PATH=/opt/unimrcp/lib /opt/unimrcp/bin/unimrcpserver -r /opt/unimrcp -d
+```
+
+Validate end-to-end with the bundled client:
+
+```bash
+{ echo 'run recog'; sleep 10; echo 'quit'; } | /opt/unimrcp/bin/umc
+journalctl -u sandroid-bridge -n 20 --no-pager
+```
+
+Expected output: umc logs report `Interpretation[0].instance[0]:
+PLACEHOLDER_INTENT` and the bridge log shows matching `START` / `RESULT`
+/ `STOP` lines with the umc session id. Real NLU replaces
+`PLACEHOLDER_INTENT` at Task 4; the NLSML schema is stable now.
+
+Dependencies on the host: `python3 >= 3.10` and `pydantic >= 2` (installed
+via `python3 -m pip install pydantic` — there is no uv/venv on the bare
+server yet; package properly when the sandroid service itself is
+systemd-ised).
