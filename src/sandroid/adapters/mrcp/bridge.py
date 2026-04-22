@@ -24,7 +24,11 @@ from dataclasses import dataclass, field
 from typing import Protocol
 
 from sandroid.models.asr.base import AudioChunk, PartialTranscript
-from sandroid.models.asr.stub import StubASR
+
+# The default ASR backend is resolved lazily via sandroid.api.deps.get_asr
+# (see _default_asr_factory) so that importing this module does not force
+# the ONNX runtime or Paraformer weights to load. Tests and alternate
+# entrypoints inject their own factory via BridgeServer(asr_factory=...).
 
 logger = logging.getLogger(__name__)
 
@@ -216,6 +220,28 @@ def render_nlsml(transcript: str, confidence: float = 0.9) -> bytes:
 # ---- Connection handler ----
 
 
+def _default_asr_factory() -> object:
+    """Resolve the configured ASR backend via the API layer's dep factory.
+
+    Respects SANDROID_ASR_BACKEND ("paraformer" default, "stub" fallback)
+    and the same SANDROID_ENV production-gate used by the REST service, so
+    the bridge and the HTTP API share one ASR instance-construction path.
+
+    If the api.deps import fails (e.g. FastAPI / onnxruntime not installed
+    on the host running only the bridge), silently fall back to StubASR
+    so a bare bridge deployment is still usable. Production can force the
+    full path by installing the full sandroid runtime dependencies.
+    """
+    try:
+        from sandroid.api.deps import get_asr  # noqa: PLC0415 — lazy
+    except ImportError as e:
+        logger.warning("api.deps unavailable (%s); using StubASR", e)
+        from sandroid.models.asr.stub import StubASR  # noqa: PLC0415
+
+        return StubASR()
+    return get_asr()
+
+
 class BridgeServer:
     def __init__(
         self,
@@ -223,7 +249,7 @@ class BridgeServer:
         asr_factory: _ASRFactory | None = None,
     ) -> None:
         self._path = socket_path
-        self._asr_factory = asr_factory or StubASR
+        self._asr_factory = asr_factory or _default_asr_factory
         self._server: asyncio.AbstractServer | None = None
 
     async def start(self) -> asyncio.AbstractServer:
@@ -386,6 +412,8 @@ async def _main() -> None:
         format="%(asctime)s %(levelname)s %(name)s %(message)s",
     )
     path = os.environ.get("SANDROID_BRIDGE_SOCK", DEFAULT_SOCKET_PATH)
+    backend = os.environ.get("SANDROID_ASR_BACKEND", "paraformer").lower()
+    logger.info("Starting bridge: asr_backend=%s socket=%s", backend, path)
     server = BridgeServer(socket_path=path)
     srv = await server.start()
     async with srv:
