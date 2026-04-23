@@ -16,9 +16,11 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import json
 import logging
 import os
 import struct
+import time
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from typing import Protocol
@@ -31,6 +33,44 @@ from sandroid.models.asr.base import AudioChunk, PartialTranscript
 # entrypoints inject their own factory via BridgeServer(asr_factory=...).
 
 logger = logging.getLogger(__name__)
+
+# Dedicated traffic logger: one structured JSON line per completed recognition
+# turn, for offline annotation and retraining data capture. Silent by default
+# — _install_traffic_sink (called from _main) wires up the sink when the
+# SANDROID_BRIDGE_TRAFFIC_LOG env var is set.
+traffic_logger = logging.getLogger("sandroid.mrcp.traffic")
+traffic_logger.propagate = False  # keep structured frames out of the main log
+
+
+def _install_traffic_sink(target: str | None) -> None:
+    """Attach a handler to traffic_logger based on env config.
+
+    target = None -> no-op, traffic_logger stays silent.
+    target = "stdout" / "stderr" -> stream to systemd journal.
+    target = path -> append one JSON line per turn.
+    """
+    if not target:
+        return
+    if target in ("stdout", "stderr"):
+        import sys  # noqa: PLC0415 — lazy, only when sink is enabled
+        handler: logging.Handler = logging.StreamHandler(
+            sys.stdout if target == "stdout" else sys.stderr
+        )
+    else:
+        os.makedirs(os.path.dirname(target) or ".", exist_ok=True)
+        handler = logging.FileHandler(target, encoding="utf-8")
+    # JSON payload already rendered into record.msg; keep the formatter trivial.
+    handler.setFormatter(logging.Formatter("%(message)s"))
+    traffic_logger.addHandler(handler)
+    traffic_logger.setLevel(logging.INFO)
+
+
+def _emit_traffic(record: dict[str, object]) -> None:
+    """Render one turn record as a single JSON line (no-op when no sink attached)."""
+    if not traffic_logger.handlers:
+        return
+    traffic_logger.info(json.dumps(record, ensure_ascii=False, separators=(",", ":")))
+
 
 # ---- Frame types (match bridge_client.h) ----
 FRAME_START = 0x01
@@ -181,6 +221,8 @@ class _Channel:
     started: bool = False
     eos_seen: bool = False
     audio_queue: asyncio.Queue[bytes | None] = field(default_factory=asyncio.Queue)
+    # monotonic seconds at START for end-to-end turn duration
+    start_monotonic: float = 0.0
 
 
 @dataclass
@@ -385,6 +427,7 @@ class BridgeServer:
         ch.sample_rate = int(sr) if isinstance(sr, int) else 16000
         ch.codec = str(meta.get("codec", "LPCM"))
         ch.started = True
+        ch.start_monotonic = time.monotonic()
         logger.info(
             "START channel=%s session=%s sr=%d codec=%s",
             ch.channel_id, ch.session_id, ch.sample_rate, ch.codec,
@@ -418,6 +461,7 @@ class BridgeServer:
         if ctx.asr_task is None:
             await self._send_error(writer, "INTERNAL", "no asr task")
             return False
+        eos_t0 = time.monotonic()
         try:
             transcript = await asyncio.wait_for(ctx.asr_task, timeout=10.0)
         except TimeoutError:
@@ -426,13 +470,31 @@ class BridgeServer:
         except Exception as e:
             await self._send_error(writer, "ASR_FAILED", str(e))
             return False
+        asr_t = time.monotonic()
         intent_id, confidence = await self._match_intent(transcript, ch)
+        nlu_t = time.monotonic()
         nlsml = render_nlsml(transcript, confidence=confidence, intent_id=intent_id)
         writer.write(encode_frame(FRAME_RESULT, nlsml))
         await writer.drain()
         logger.info(
             "RESULT sent for %s (%d bytes) intent=%s conf=%.2f",
             ch.channel_id, len(nlsml), intent_id, confidence,
+        )
+        _emit_traffic(
+            {
+                "ts": time.time(),
+                "channel_id": ch.channel_id,
+                "session_id": ch.session_id,
+                "scene_id": self._default_scene,
+                "transcript": transcript,
+                "intent_id": intent_id,
+                "confidence": round(confidence, 4),
+                "asr_ms": int((asr_t - eos_t0) * 1000),
+                "nlu_ms": int((nlu_t - asr_t) * 1000),
+                "turn_ms": int((nlu_t - ch.start_monotonic) * 1000)
+                if ch.start_monotonic
+                else None,
+            }
         )
         return True
 
@@ -501,9 +563,12 @@ async def _main() -> None:
     path = os.environ.get("SANDROID_BRIDGE_SOCK", DEFAULT_SOCKET_PATH)
     backend = os.environ.get("SANDROID_ASR_BACKEND", "paraformer").lower()
     default_scene = os.environ.get("SANDROID_BRIDGE_DEFAULT_SCENE") or None
+    traffic_sink = os.environ.get("SANDROID_BRIDGE_TRAFFIC_LOG") or None
+    _install_traffic_sink(traffic_sink)
     logger.info(
-        "Starting bridge: asr_backend=%s socket=%s default_scene=%s",
+        "Starting bridge: asr_backend=%s socket=%s default_scene=%s traffic=%s",
         backend, path, default_scene or "(none, NLU disabled)",
+        traffic_sink or "(disabled)",
     )
     server = BridgeServer(socket_path=path, default_scene=default_scene)
     srv = await server.start()
