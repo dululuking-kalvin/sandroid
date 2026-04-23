@@ -11,6 +11,16 @@ RuntimeDirectoryMode=0755
 Environment=PYTHONPATH=/opt/sandroid/src
 Environment=SANDROID_BRIDGE_SOCK=/var/run/sandroid/bridge.sock
 Environment=SANDROID_BRIDGE_LOG=INFO
+# Paraformer ASR artifacts live under /opt/sandroid/deploy/models/ — override
+# deps.py's default (which resolves relative to the source tree and would fail
+# under the /opt/sandroid layout). SANDROID_ENV=dev for first boot so missing
+# artifacts fall back to StubASR instead of crash-looping; flip to production
+# once the journalctl log confirms "ASR backend=ParaformerASR".
+Environment=SANDROID_ENV=dev
+Environment=SANDROID_ASR_BACKEND=paraformer
+Environment=SANDROID_ASR_MODEL_PATH=/opt/sandroid/deploy/models/paraformer_zh.int8.onnx
+Environment=SANDROID_ASR_TOKENS_PATH=/opt/sandroid/deploy/models/paraformer_zh.tokens.txt
+Environment=SANDROID_ASR_CMVN_PATH=/opt/sandroid/deploy/models/paraformer_zh.am.mvn
 ExecStart=/usr/bin/python3 -m sandroid.adapters.mrcp.bridge
 Restart=on-failure
 RestartSec=2

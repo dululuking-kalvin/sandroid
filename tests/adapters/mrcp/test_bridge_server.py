@@ -40,7 +40,7 @@ class _FixedASR:
     ) -> AsyncIterator[PartialTranscript]:
         async for _ in chunks:
             pass
-        yield PartialTranscript(text=self._text, is_final=True)
+        yield PartialTranscript(text=self._text, is_final=True, start_ms=0, end_ms=0)
 
 
 async def _start_server(path: str) -> BridgeServer:

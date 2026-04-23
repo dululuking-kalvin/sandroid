@@ -7,7 +7,7 @@ do not add behavior here that cannot be read off those bits.
 
 from __future__ import annotations
 
-from enum import StrEnum
+from enum import Enum
 from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
@@ -17,7 +17,7 @@ IntentId = str
 CategoryPath = str
 
 
-class SearchDepth(StrEnum):
+class SearchDepth(str, Enum):
     """How far an S1-enabled scene searches into its subtree."""
 
     NONE = "none"
@@ -55,7 +55,7 @@ class ModeProperties(BaseModel):
     forbids_children: bool = False
 
 
-class Mode(StrEnum):
+class Mode(str, Enum):
     """Category modes. Semantics live in ``MODE_PROPERTIES`` — read that table."""
 
     STANDARD = "STANDARD"
