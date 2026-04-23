@@ -112,6 +112,18 @@ def test_nlsml_custom_confidence() -> None:
     assert 'confidence="0.75"' in out
 
 
+def test_nlsml_emits_real_intent_id() -> None:
+    out = render_nlsml("hello", confidence=0.42, intent_id="check_balance").decode()
+    assert "<instance>check_balance</instance>" in out
+    assert "PLACEHOLDER_INTENT" not in out
+    assert 'confidence="0.42"' in out
+
+
+def test_nlsml_escapes_intent_id_xml_specials() -> None:
+    out = render_nlsml("t", intent_id="a&<b>").decode()
+    assert "<instance>a&amp;&lt;b&gt;</instance>" in out
+
+
 def test_large_frame_encoding_structure() -> None:
     payload = b"x" * 10_000
     raw = encode_frame(FRAME_AUDIO, payload)

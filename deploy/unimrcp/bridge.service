@@ -21,6 +21,15 @@ Environment=SANDROID_ASR_BACKEND=paraformer
 Environment=SANDROID_ASR_MODEL_PATH=/opt/sandroid/deploy/models/paraformer_zh.int8.onnx
 Environment=SANDROID_ASR_TOKENS_PATH=/opt/sandroid/deploy/models/paraformer_zh.tokens.txt
 Environment=SANDROID_ASR_CMVN_PATH=/opt/sandroid/deploy/models/paraformer_zh.am.mvn
+# NLU matcher: same override pattern as ASR. The bridge reads SANDROID_
+# BRIDGE_DEFAULT_SCENE to decide which scene to route the transcript into;
+# leave unset to disable NLU and keep emitting PLACEHOLDER_INTENT.
+Environment=SANDROID_SCENES_DIR=/opt/sandroid/configs/scenes
+Environment=SANDROID_NLU_BACKEND=embedder
+Environment=SANDROID_NLU_MODEL_PATH=/opt/sandroid/deploy/models/nlu_embedder_quantized.onnx
+Environment=SANDROID_NLU_TOKENIZER_PATH=/opt/sandroid/deploy/models/nlu_tokenizer.json
+Environment=SANDROID_SILERO_PATH=/opt/sandroid/deploy/models/silero_vad.onnx
+Environment=SANDROID_BRIDGE_DEFAULT_SCENE=example_bank
 ExecStart=/usr/bin/python3 -m sandroid.adapters.mrcp.bridge
 Restart=on-failure
 RestartSec=2

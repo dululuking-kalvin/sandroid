@@ -192,26 +192,36 @@ class _HandlerCtx:
 # ---- NLSML rendering ----
 
 
-def render_nlsml(transcript: str, confidence: float = 0.9) -> bytes:
-    """Produce NLSML with a placeholder intent so the schema is final.
+PLACEHOLDER_INTENT = "PLACEHOLDER_INTENT"
 
-    Real NLU replaces ``PLACEHOLDER_INTENT`` and per-intent confidence
-    at Task 4 — the shape of the document does not change.
-    """
-    # escape minimal XML specials in transcript
-    safe = (
-        transcript.replace("&", "&amp;")
+
+def _xml_escape(text: str) -> str:
+    return (
+        text.replace("&", "&amp;")
         .replace("<", "&lt;")
         .replace(">", "&gt;")
     )
+
+
+def render_nlsml(
+    transcript: str,
+    confidence: float = 0.9,
+    intent_id: str = PLACEHOLDER_INTENT,
+) -> bytes:
+    """Produce NLSML with a matched intent or placeholder when NLU yields nothing.
+
+    ``intent_id`` defaults to ``PLACEHOLDER_INTENT`` so callers that have no
+    matcher (pure ASR mode, or matcher returned empty N-best) still produce
+    a schema-stable document.
+    """
     conf_str = f"{confidence:.2f}"
     return (
         '<?xml version="1.0"?>\n'
         '<result xmlns="http://www.ietf.org/xml/ns/mrcpv2"\n'
         '        grammar="session:grammar@sandroid">\n'
         f'  <interpretation confidence="{conf_str}">\n'
-        f'    <input mode="speech">{safe}</input>\n'
-        f'    <instance>PLACEHOLDER_INTENT</instance>\n'
+        f'    <input mode="speech">{_xml_escape(transcript)}</input>\n'
+        f'    <instance>{_xml_escape(intent_id)}</instance>\n'
         "  </interpretation>\n"
         "</result>\n"
     ).encode()
@@ -242,15 +252,63 @@ def _default_asr_factory() -> object:
     return get_asr()
 
 
+class _OrchestratorFactory(Protocol):
+    def __call__(self) -> object: ...  # returns something with .recognize()
+
+
+def _default_orchestrator_factory() -> object | None:
+    """Resolve the recognition Orchestrator via api.deps dep factories.
+
+    Mirrors ``_default_asr_factory``: if api.deps or its transitive imports
+    (fastapi, tokenizers, scenes directory, NLU model artifacts, ...) are
+    unavailable, fall back to None — the bridge will then skip matcher
+    invocation and emit NLSML with ``PLACEHOLDER_INTENT`` as it did before.
+    """
+    try:
+        # Lazy imports so bare bridge hosts (no fastapi/onnxruntime) still boot.
+        from sandroid.api.deps import (  # noqa: PLC0415
+            get_matcher,
+            get_registry,
+            get_session_store,
+        )
+        from sandroid.core.orchestrator import Orchestrator  # noqa: PLC0415
+    except ImportError as e:
+        logger.warning("orchestrator deps unavailable (%s); NLU disabled", e)
+        return None
+
+    try:
+        return Orchestrator(
+            registry=get_registry(),
+            sessions=get_session_store(),
+            matcher=get_matcher(),
+        )
+    except Exception as e:  # artefact-missing / scene-loader errors -> placeholder
+        logger.warning("orchestrator construction failed (%s); NLU disabled", e)
+        return None
+
+
 class BridgeServer:
     def __init__(
         self,
         socket_path: str = DEFAULT_SOCKET_PATH,
         asr_factory: _ASRFactory | None = None,
+        orchestrator_factory: _OrchestratorFactory | None = None,
+        default_scene: str | None = None,
     ) -> None:
         self._path = socket_path
         self._asr_factory = asr_factory or _default_asr_factory
+        self._orch_factory = orchestrator_factory or _default_orchestrator_factory
+        self._default_scene = default_scene
+        self._orchestrator: object | None = None
+        self._orchestrator_built = False
         self._server: asyncio.AbstractServer | None = None
+
+    def _get_orchestrator(self) -> object | None:
+        """Lazily resolve the orchestrator so import-time costs stay out of boot."""
+        if not self._orchestrator_built:
+            self._orchestrator = self._orch_factory()
+            self._orchestrator_built = True
+        return self._orchestrator
 
     async def start(self) -> asyncio.AbstractServer:
         parent = os.path.dirname(self._path) or "."
@@ -259,7 +317,7 @@ class BridgeServer:
         if os.path.exists(self._path):
             with contextlib.suppress(OSError):
                 os.unlink(self._path)
-        self._server = await asyncio.start_unix_server(  # type: ignore[attr-defined]
+        self._server = await asyncio.start_unix_server(  # type: ignore[attr-defined,unused-ignore]
             self._handle, path=self._path
         )
         logger.info("Bridge listening on %s", self._path)
@@ -368,11 +426,40 @@ class BridgeServer:
         except Exception as e:
             await self._send_error(writer, "ASR_FAILED", str(e))
             return False
-        nlsml = render_nlsml(transcript)
+        intent_id, confidence = await self._match_intent(transcript, ch)
+        nlsml = render_nlsml(transcript, confidence=confidence, intent_id=intent_id)
         writer.write(encode_frame(FRAME_RESULT, nlsml))
         await writer.drain()
-        logger.info("RESULT sent for %s (%d bytes)", ch.channel_id, len(nlsml))
+        logger.info(
+            "RESULT sent for %s (%d bytes) intent=%s conf=%.2f",
+            ch.channel_id, len(nlsml), intent_id, confidence,
+        )
         return True
+
+    async def _match_intent(self, transcript: str, ch: _Channel) -> tuple[str, float]:
+        """Route the transcript through the configured Orchestrator.
+
+        Returns (intent_id, confidence). Falls back to (PLACEHOLDER_INTENT, 0.9)
+        when the orchestrator isn't available or produces no top match — the
+        NLSML contract stays stable in both cases.
+        """
+        orch = self._get_orchestrator()
+        if orch is None or self._default_scene is None:
+            return PLACEHOLDER_INTENT, 0.9
+        try:
+            from sandroid.core.orchestrator import RecognitionRequest  # noqa: PLC0415
+            req = RecognitionRequest(
+                scene_id=self._default_scene,
+                text=transcript,
+                session_id=ch.session_id or None,
+            )
+            resp = await orch.recognize(req)  # type: ignore[attr-defined]
+        except Exception as e:  # matcher failures shouldn't kill the turn
+            logger.warning("matcher failed (%s); emitting placeholder", e)
+            return PLACEHOLDER_INTENT, 0.9
+        if resp.top is None:
+            return PLACEHOLDER_INTENT, 0.9
+        return resp.top.intent_id, resp.top.confidence
 
     async def _send_error(
         self,
@@ -413,8 +500,12 @@ async def _main() -> None:
     )
     path = os.environ.get("SANDROID_BRIDGE_SOCK", DEFAULT_SOCKET_PATH)
     backend = os.environ.get("SANDROID_ASR_BACKEND", "paraformer").lower()
-    logger.info("Starting bridge: asr_backend=%s socket=%s", backend, path)
-    server = BridgeServer(socket_path=path)
+    default_scene = os.environ.get("SANDROID_BRIDGE_DEFAULT_SCENE") or None
+    logger.info(
+        "Starting bridge: asr_backend=%s socket=%s default_scene=%s",
+        backend, path, default_scene or "(none, NLU disabled)",
+    )
+    server = BridgeServer(socket_path=path, default_scene=default_scene)
     srv = await server.start()
     async with srv:
         await srv.serve_forever()
