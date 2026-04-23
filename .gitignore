@@ -49,3 +49,6 @@ audit/
 
 # Claude Code local state
 .claude/
+
+# Third-party reference material we don't own copyright to
+docs/NLP Voice Engine API Manual*.pdf
