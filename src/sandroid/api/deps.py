@@ -19,6 +19,8 @@ from sandroid.models.asr.base import ASRBackend
 from sandroid.models.asr.paraformer import ParaformerASR, ParaformerError
 from sandroid.models.asr.stub import StubASR
 from sandroid.models.nlu.onnx_embedder import ONNXEmbedderError, ONNXEmbedderMatcher
+from sandroid.models.slu.base import SLUBackend
+from sandroid.models.slu.stub import StubSLU
 from sandroid.storage.scene_registry import SceneRegistry
 from sandroid.storage.session_store import InMemorySessionStore, SessionStore
 from sandroid.vad.base import VoiceActivityDetector
@@ -45,6 +47,7 @@ ASR_BACKEND_ENV = "SANDROID_ASR_BACKEND"  # "paraformer" (default) | "stub"
 ASR_MODEL_PATH_ENV = "SANDROID_ASR_MODEL_PATH"
 ASR_TOKENS_PATH_ENV = "SANDROID_ASR_TOKENS_PATH"
 ASR_CMVN_PATH_ENV = "SANDROID_ASR_CMVN_PATH"
+SLU_BACKEND_ENV = "SANDROID_SLU_BACKEND"  # "stub" (default); "wav2vec2" lands in Phase 5f-c
 
 
 def _is_production() -> bool:
@@ -114,6 +117,20 @@ def get_asr() -> ASRBackend:
 
 
 @lru_cache(maxsize=1)
+def get_slu() -> SLUBackend:
+    """End-to-end SLU (Path B). Default ``stub`` abstains so Fusion in 5f-b
+    degenerates to Path A on hosts without the wav2vec2 model installed.
+    The ``wav2vec2`` backend lands in Phase 5f-c — until then, configuring it
+    is a hard configuration error rather than a silent fallback.
+    """
+
+    backend = os.environ.get(SLU_BACKEND_ENV, "stub").lower()
+    if backend == "stub":
+        return StubSLU()
+    raise ValueError(f"unknown SLU backend {backend!r}; expected 'stub'")
+
+
+@lru_cache(maxsize=1)
 def get_vad() -> VoiceActivityDetector:
     backend = os.environ.get(VAD_BACKEND_ENV, "silero").lower()
     if backend == "mock":
@@ -154,4 +171,5 @@ def reset_dependency_caches() -> None:
     get_session_store.cache_clear()
     get_matcher.cache_clear()
     get_asr.cache_clear()
+    get_slu.cache_clear()
     get_vad.cache_clear()
