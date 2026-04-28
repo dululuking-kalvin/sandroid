@@ -1,17 +1,26 @@
-"""Recognition orchestrator — glues registry + scope + matcher + session.
+"""Recognition orchestrator — glues registry + scope + matcher + session + fusion.
 
-This is the hot path: given a scene pointer and a transcript, return the
-top intent + N-best + optional ``follow_up``. Pure Python for now; the audio
-path lives behind the ``text`` input until ASR/NLU/SLU adapters land.
+This is the hot path: given a scene pointer and a transcript (and optionally
+raw audio for Path B), return the top intent + N-best + optional ``follow_up``.
+
+Phase 5f-b adds Path B end-to-end SLU: when ``RecognitionRequest.audio`` is
+provided, ``Orchestrator`` runs the matcher (Path A) and the SLU adapter
+(Path B) in parallel and combines them via the Fusion layer using per-scene
+weights. With ``audio=None``, Path B abstains and the result is
+algebraically identical to the pre-5f-b matcher-only path.
 """
 
 from __future__ import annotations
 
+import asyncio
+
 from pydantic import BaseModel, Field
 
 from sandroid.core.domain import CategoryId, CategoryPath, Intent, IntentId, Session
+from sandroid.core.fusion import DEFAULT_CONFIG, FusionConfig, fuse
 from sandroid.core.matcher import IntentMatcher, MatchCandidate
 from sandroid.core.scope import scope
+from sandroid.models.slu.base import FinalIntent, SLUBackend
 from sandroid.storage.scene_registry import SceneRegistry
 from sandroid.storage.session_store import SessionStore
 
@@ -20,6 +29,10 @@ class RecognitionRequest(BaseModel):
     scene_id: str | None = None
     category_path: CategoryPath | None = None
     text: str
+    # Raw audio for Path B (E2E SLU). None -> Path B abstains; algebraically
+    # equivalent to the pre-5f-b matcher-only result. Bytes are passed through
+    # to the SLU adapter as-is (typically WAV containers, decoded inside).
+    audio: bytes | None = None
     session_id: str | None = None
     n_best: int = Field(default=5, ge=1, le=20)
 
@@ -46,10 +59,17 @@ class Orchestrator:
         registry: SceneRegistry,
         sessions: SessionStore,
         matcher: IntentMatcher,
+        slu: SLUBackend | None = None,
+        fusion_config: FusionConfig | None = None,
     ) -> None:
         self._registry = registry
         self._sessions = sessions
         self._matcher = matcher
+        # slu/fusion default to None/DEFAULT_CONFIG so existing call sites
+        # (and tests) that haven't migrated to 5f-b still work — Path B
+        # is silently disabled when slu is None.
+        self._slu = slu
+        self._fusion_config = fusion_config or DEFAULT_CONFIG
 
     async def recognize(self, req: RecognitionRequest) -> RecognitionResponse:
         scene_id, category_id = self._registry.resolve(
@@ -70,9 +90,21 @@ class Orchestrator:
             session.current_category_id = category_id
 
         candidates: list[Intent] = scope(tree, session.current_category_id)
-        ranked = self._matcher.score(req.text, candidates, n_best=req.n_best)
 
-        top_hit, follow_up = self._resolve_top(ranked, candidates)
+        # Path A + Path B run concurrently. Both ONNX paths are CPU-bound;
+        # asyncio.to_thread releases the event loop and lets them overlap.
+        ranked, slu_result = await self._run_dual_paths(
+            text=req.text,
+            audio=req.audio,
+            scene_id=scene_id,
+            candidates=candidates,
+            n_best=req.n_best,
+        )
+
+        weights = self._fusion_config.for_scene(scene_id)
+        fused = fuse(ranked, slu_result, candidates, weights, n_best=req.n_best)
+
+        top_hit, follow_up = self._resolve_top(fused, candidates)
 
         if follow_up is not None:
             try:
@@ -89,10 +121,39 @@ class Orchestrator:
         return RecognitionResponse(
             session_id=session.session_id,
             top=top_hit,
-            n_best=ranked,
+            n_best=fused,
             follow_up=follow_up,
             current_category_id=session.current_category_id,
         )
+
+    async def _run_dual_paths(
+        self,
+        *,
+        text: str,
+        audio: bytes | None,
+        scene_id: str,
+        candidates: list[Intent],
+        n_best: int,
+    ) -> tuple[list[MatchCandidate], FinalIntent | None]:
+        """Run Path A (matcher) + Path B (SLU) concurrently. Returns both raw outputs.
+
+        Fusion happens upstream; this layer is just about parallel execution
+        and Path B's "abstain when not configured" contract.
+        """
+        # Path A: matcher.score is sync + CPU-bound. asyncio.to_thread keeps
+        # the event loop responsive so Path B can run alongside.
+        path_a = asyncio.to_thread(self._matcher.score, text, candidates, n_best=n_best)
+
+        if self._slu is not None and audio is not None:
+            path_b: asyncio.Future[FinalIntent | None] = asyncio.ensure_future(
+                self._slu.recognize_file(audio, scene_id=scene_id)
+            )
+            ranked, slu_result = await asyncio.gather(path_a, path_b)
+        else:
+            ranked = await path_a
+            slu_result = None
+
+        return ranked, slu_result
 
     async def _load_or_create_session(
         self,

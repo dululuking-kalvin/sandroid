@@ -1,0 +1,22 @@
+# Fusion weights for the dual-path recognizer (Phase 5f-b).
+#
+#   final_score(intent) = w_a * conf_a(intent) + w_b * conf_b(intent)
+#
+# - Path A is ASR -> NLU (transcript-based, explainable).
+# - Path B is end-to-end PCM -> intent (more robust to ASR errors).
+# - Weights need not sum to 1.0; the engine normalizes them so the fused
+#   score stays in [0, 1].
+#
+# Defaults disable Path B contribution. Until wav2vec2-base-zh ships in
+# Phase 5f-c, Path B is StubSLU (always abstains) — a non-zero w_b
+# would lower confidence without giving anything back.
+
+default:
+  w_a: 1.0
+  w_b: 0.0
+
+scenes:
+  # Example: once Path B has been trained on the bank scene, opt in here.
+  # example_bank:
+  #   w_a: 0.7
+  #   w_b: 0.3
