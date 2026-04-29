@@ -29,9 +29,11 @@ class RecognitionRequest(BaseModel):
     scene_id: str | None = None
     category_path: CategoryPath | None = None
     text: str
-    # Raw audio for Path B (E2E SLU). None -> Path B abstains; algebraically
-    # equivalent to the pre-5f-b matcher-only result. Bytes are passed through
-    # to the SLU adapter as-is (typically WAV containers, decoded inside).
+    # Raw audio for Path B (E2E SLU). Format: PCM16 little-endian, 16 kHz,
+    # mono. No container header. Front-end is responsible for transcoding
+    # before passing — sandroid's REST/WS/MRCP entry points all do this.
+    # None -> Path B abstains; algebraically equivalent to the pre-5f-b
+    # matcher-only result.
     audio: bytes | None = None
     session_id: str | None = None
     n_best: int = Field(default=5, ge=1, le=20)
@@ -146,7 +148,7 @@ class Orchestrator:
 
         if self._slu is not None and audio is not None:
             path_b: asyncio.Future[FinalIntent | None] = asyncio.ensure_future(
-                self._slu.recognize_file(audio, scene_id=scene_id)
+                self._slu.recognize_audio(audio, scene_id=scene_id)
             )
             ranked, slu_result = await asyncio.gather(path_a, path_b)
         else:

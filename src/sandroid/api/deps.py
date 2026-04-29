@@ -48,6 +48,31 @@ ASR_MODEL_PATH_ENV = "SANDROID_ASR_MODEL_PATH"
 ASR_TOKENS_PATH_ENV = "SANDROID_ASR_TOKENS_PATH"
 ASR_CMVN_PATH_ENV = "SANDROID_ASR_CMVN_PATH"
 SLU_BACKEND_ENV = "SANDROID_SLU_BACKEND"  # "stub" (default); "wav2vec2" lands in Phase 5f-c
+MAX_AUDIO_BYTES_ENV = "SANDROID_MAX_AUDIO_BYTES"  # entry-point ceiling, default 8 MiB
+DEFAULT_MAX_AUDIO_BYTES = 8 * 1024 * 1024  # ~4 minutes of PCM16 16k mono
+
+
+def get_max_audio_bytes() -> int:
+    """Maximum audio buffer size accepted by REST/WS/MRCP entry points.
+
+    Caps memory pressure under malicious or accidental long uploads. Tunable
+    via the SANDROID_MAX_AUDIO_BYTES env var. Each ~960 KB of PCM16 buffer
+    is roughly 30 seconds of phone audio at 16 kHz mono, so the default
+    accommodates ordinary IVR turns and rejects anything that looks like
+    an extended recording attack.
+    """
+    raw = os.environ.get(MAX_AUDIO_BYTES_ENV)
+    if raw is None:
+        return DEFAULT_MAX_AUDIO_BYTES
+    try:
+        value = int(raw)
+    except ValueError as e:
+        raise ValueError(
+            f"{MAX_AUDIO_BYTES_ENV} must be an integer; got {raw!r}"
+        ) from e
+    if value <= 0:
+        raise ValueError(f"{MAX_AUDIO_BYTES_ENV} must be positive; got {value}")
+    return value
 
 
 def _is_production() -> bool:

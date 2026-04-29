@@ -64,9 +64,9 @@ class SLUBackend(Protocol):
         scene_id: str | None = None,
     ) -> AsyncIterator[PartialIntent]: ...
 
-    async def recognize_file(
+    async def recognize_audio(
         self,
-        wav_bytes: bytes,
+        pcm16: bytes,
         *,
         scene_id: str | None = None,
     ) -> FinalIntent: ...

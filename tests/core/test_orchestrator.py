@@ -58,9 +58,9 @@ class _FixedSLU:
             end_ms=0,
         )
 
-    async def recognize_file(
+    async def recognize_audio(
         self,
-        wav_bytes: bytes,
+        pcm16: bytes,
         *,
         scene_id: str | None = None,
     ) -> FinalIntent:

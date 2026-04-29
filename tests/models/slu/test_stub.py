@@ -44,9 +44,9 @@ async def test_stub_stream_with_empty_audio_still_yields_final() -> None:
     assert finals[0].confidence == 0.0
 
 
-async def test_stub_recognize_file_abstains() -> None:
+async def test_stub_recognize_audio_abstains() -> None:
     stub = StubSLU()
-    out = await stub.recognize_file(b"")
+    out = await stub.recognize_audio(b"")
     assert isinstance(out, FinalIntent)
     assert out.intent_id is None
     assert out.confidence == 0.0
@@ -56,8 +56,8 @@ async def test_stub_recognize_file_abstains() -> None:
 async def test_stub_ignores_scene_id() -> None:
     """scene_id is part of the protocol but stub treats every scene the same."""
     stub = StubSLU()
-    out_a = await stub.recognize_file(b"", scene_id="example_bank")
-    out_b = await stub.recognize_file(b"", scene_id=None)
+    out_a = await stub.recognize_audio(b"", scene_id="example_bank")
+    out_b = await stub.recognize_audio(b"", scene_id=None)
     assert out_a == out_b
 
 
