@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Phase 6a — sandroid MRCP smoke scenario.
+
+  Drives the bundled UniMRCP `umc` client through one RECOGNIZE turn against
+  the `Sandroid-Recog-1` engine (registered by deploy/unimrcp/patches/0003).
+  The scenario plays the canned WAV at `data/sandroid/hello.wav` (relative
+  to UniMRCP's data-dir), which the smoke script stages before invoking
+  `umc -s SandroidRecogSmoke`.
+
+  Exit criterion is enforced by the smoke script, not this scenario file:
+  the smoke script greps the umc log for
+    Interpretation[0].instance[0]: greeting
+  emitted by the bridge after StubMatcher (or the real ONNX matcher) picks
+  the `greeting` intent in the example_bank scene.
+
+  This file is meant to be installed at runtime as
+    /opt/unimrcp/conf/client-profiles/sandroid-scenarios.xml
+  by the smoke script — it is not a drop-in replacement for the bundled
+  scenarios.xml.
+-->
+<umcscenarios xmlns="http://www.unimrcp.org/schema">
+  <scenario name="SandroidRecogSmoke"
+            class="recognizer"
+            profile="MRCPv2-Default"
+            enable="true">
+
+    <!-- RECOGNIZE method body. Inline grammar URI so the request is fully
+         self-contained; the bridge ignores the grammar contents and routes
+         on the audio + scene_id (set at bridge service start time). -->
+    <recog>
+      <method name="RECOGNIZE">
+        <!-- Built-in speech grammar reference; the sandroid-recog plugin
+             accepts it but does not interpret it. -->
+        <header name="Content-Type" value="text/uri-list"/>
+        <header name="Recognition-Timeout" value="10000"/>
+        <header name="No-Input-Timeout" value="5000"/>
+        <header name="Speech-Complete-Timeout" value="800"/>
+        <body><![CDATA[builtin:speech/transcribe]]></body>
+      </method>
+    </recog>
+
+    <!-- Audio source: 16 kHz mono PCM16 WAV. The smoke script stages this
+         under `$UNIMRCP_DATA_DIR/sandroid/hello.wav` from
+         `deploy/umc/canned/hello.wav` in the repo. -->
+    <player audio-source="sandroid/hello.wav"/>
+  </scenario>
+</umcscenarios>

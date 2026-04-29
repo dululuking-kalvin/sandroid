@@ -1,0 +1,44 @@
+# Phase 6a — MRCP smoke regression gate.
+#
+# Currently MANUAL-ONLY (`workflow_dispatch`). Will not run on push or PR
+# events. To enable as a pre-merge gate once a self-hosted runner labeled
+# `linux-mrcp` exists, replace the `on:` block with:
+#
+#     on:
+#       pull_request:
+#         paths:
+#           - 'src/sandroid/adapters/mrcp/**'
+#           - 'src/sandroid/core/**'
+#           - 'native/unimrcp-plugin/**'
+#           - 'deploy/umc/**'
+#           - 'scripts/smoke/mrcp_smoke.sh'
+#       workflow_dispatch:
+#
+# See docs/phase-6a-smoke.md for prerequisites the runner host must satisfy.
+
+name: mrcp-smoke
+
+on:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    name: umc → bridge → orchestrator
+    # Self-hosted runner is required: the job needs UniMRCP installed,
+    # sandroid-bridge.service running, and ports 1544/8060 listening.
+    # GitHub-hosted runners cannot satisfy these.
+    runs-on: [self-hosted, linux-mrcp]
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Run MRCP smoke
+        env:
+          UNIMRCP_PREFIX: /opt/unimrcp
+          BRIDGE_SOCK: /var/run/sandroid/bridge.sock
+          EXPECTED_INTENT: greeting
+        run: |
+          chmod +x scripts/smoke/mrcp_smoke.sh
+          SANDROID_REPO="$GITHUB_WORKSPACE" ./scripts/smoke/mrcp_smoke.sh --verbose
