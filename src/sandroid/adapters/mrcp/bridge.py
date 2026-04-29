@@ -223,6 +223,12 @@ class _Channel:
     audio_queue: asyncio.Queue[bytes | None] = field(default_factory=asyncio.Queue)
     # monotonic seconds at START for end-to-end turn duration
     start_monotonic: float = 0.0
+    # Path B (SLU) input: mirrors the LPCM stream. ``audio_overflow`` flips
+    # if the accumulator would exceed ``max_audio_bytes`` — Path A keeps
+    # running so the bridge still emits NLSML.
+    audio_accum: bytearray = field(default_factory=bytearray)
+    audio_overflow: bool = False
+    max_audio_bytes: int = 0  # 0 means uninitialised; set on START
 
 
 @dataclass
@@ -292,6 +298,16 @@ def _default_asr_factory() -> object:
 
         return StubASR()
     return get_asr()
+
+
+def _resolve_max_audio_bytes() -> int:
+    """Mirror the REST/WS size cap; fall back to a hard-coded 8 MiB if the
+    api.deps helper isn't importable on a bare-bridge host."""
+    try:
+        from sandroid.api.deps import get_max_audio_bytes  # noqa: PLC0415
+        return get_max_audio_bytes()
+    except ImportError:
+        return 8 * 1024 * 1024
 
 
 class _OrchestratorFactory(Protocol):
@@ -428,6 +444,7 @@ class BridgeServer:
         ch.codec = str(meta.get("codec", "LPCM"))
         ch.started = True
         ch.start_monotonic = time.monotonic()
+        ch.max_audio_bytes = _resolve_max_audio_bytes()
         logger.info(
             "START channel=%s session=%s sr=%d codec=%s",
             ch.channel_id, ch.session_id, ch.sample_rate, ch.codec,
@@ -441,10 +458,19 @@ class BridgeServer:
         ctx: _HandlerCtx,
         writer: asyncio.StreamWriter,
     ) -> bool:
-        if not ctx.channel.started:
+        ch = ctx.channel
+        if not ch.started:
             await self._send_error(writer, "UNEXPECTED_FRAME", "AUDIO before START")
             return False
-        await ctx.channel.audio_queue.put(payload)
+        # Mirror into Path B's buffer; overflow disables further accumulation
+        # so memory stays bounded under malformed clients. Path A is unaffected.
+        if not ch.audio_overflow:
+            if len(ch.audio_accum) + len(payload) > ch.max_audio_bytes:
+                ch.audio_overflow = True
+                ch.audio_accum = bytearray()
+            else:
+                ch.audio_accum.extend(payload)
+        await ch.audio_queue.put(payload)
         return True
 
     async def _handle_eos(
@@ -513,6 +539,7 @@ class BridgeServer:
             req = RecognitionRequest(
                 scene_id=self._default_scene,
                 text=transcript,
+                audio=None if ch.audio_overflow else bytes(ch.audio_accum),
                 session_id=ch.session_id or None,
             )
             resp = await orch.recognize(req)  # type: ignore[attr-defined]
