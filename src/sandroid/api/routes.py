@@ -28,6 +28,7 @@ from sandroid.api.deps import (
     API_KEY_ENV,
     DEV_DEFAULT_API_KEY,
     get_asr,
+    get_max_audio_bytes,
     get_orchestrator,
     get_vad,
     require_api_key,
@@ -128,6 +129,13 @@ async def recognize_file(
             detail="either scene_id or category_path is required",
         )
     raw = await audio.read()
+    max_bytes = get_max_audio_bytes()
+    if len(raw) > max_bytes:
+        _observe_recognize_result("file", scene, started, "error")
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"audio payload exceeds {max_bytes} bytes",
+        )
     try:
         buffer = decode_wav(raw)
     except AudioFormatError as exc:
@@ -151,6 +159,9 @@ async def recognize_file(
         scene_id=scene_id,
         category_path=category_path,
         text=transcript.text,
+        # Pass the normalized PCM16 (not the raw WAV) so Path B sees a
+        # uniform format across REST/WS/MRCP entry points.
+        audio=buffer.pcm16,
         session_id=session_id,
         n_best=n_best,
     )
@@ -190,8 +201,9 @@ class _TurnContext:
     """
 
     __slots__ = (
-        "cancelled", "category_path", "metric_recorded", "n_best",
-        "queue", "scene_id", "started_at", "task",
+        "audio_accum", "audio_overflow", "cancelled", "category_path",
+        "max_audio_bytes", "metric_recorded", "n_best", "queue",
+        "scene_id", "started_at", "task",
     )
 
     def __init__(
@@ -199,6 +211,7 @@ class _TurnContext:
         scene_id: str | None,
         category_path: str | None,
         n_best: int,
+        max_audio_bytes: int,
     ) -> None:
         self.scene_id = scene_id
         self.category_path = category_path
@@ -209,6 +222,13 @@ class _TurnContext:
         self.cancelled = False
         self.started_at = time.monotonic()
         self.metric_recorded = False
+        # Mirrors the PCM stream into a buffer for Path B; ASR still consumes
+        # the queue. ``audio_overflow`` flips when the cap is hit and disables
+        # further accumulation (Path A keeps running so the user still gets
+        # a transcript; Path B is dropped for the turn).
+        self.audio_accum: bytearray = bytearray()
+        self.audio_overflow: bool = False
+        self.max_audio_bytes = max_audio_bytes
 
 
 async def _send_error(
@@ -428,6 +448,7 @@ async def _finalize_turn(
             scene_id=ctx.scene_id,
             category_path=ctx.category_path,
             text=final_text,
+            audio=None if ctx.audio_overflow else bytes(ctx.audio_accum),
             session_id=session_id,
             n_best=ctx.n_best,
         )
@@ -486,7 +507,17 @@ class _StreamSession:
     async def handle_pcm(self, data: bytes) -> None:
         if self._ctx is None or self._ctx.cancelled:
             return
-        await self._ctx.queue.put(data)
+        ctx = self._ctx
+        # Mirror raw PCM into Path B's accumulator. Overflow disables Path B
+        # for the rest of the turn but lets ASR keep running so the user still
+        # gets a transcript.
+        if not ctx.audio_overflow:
+            if len(ctx.audio_accum) + len(data) > ctx.max_audio_bytes:
+                ctx.audio_overflow = True
+                ctx.audio_accum = bytearray()
+            else:
+                ctx.audio_accum.extend(data)
+        await ctx.queue.put(data)
 
     async def handle_stop(self) -> None:
         if self._ctx is None or self._ctx.cancelled:
@@ -536,6 +567,7 @@ class _StreamSession:
         ctx = _TurnContext(
             scene_id=scene_id, category_path=category_path,
             n_best=int(control.get("n_best", 5)),
+            max_audio_bytes=get_max_audio_bytes(),
         )
         ctx.task = asyncio.create_task(
             _pump_vad_asr(
