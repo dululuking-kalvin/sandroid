@@ -120,11 +120,7 @@ def nlsml_transcript(text: str, confidence: float) -> bytes:
     ``confidence`` on the interpretation element (0..1 per RFC 6787 §6.3.1).
     """
 
-    safe_text = (
-        text.replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-    )
+    safe_text = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
     xml = (
         '<?xml version="1.0"?>\n'
         '<result xmlns="urn:ietf:params:xml:ns:nlsml:1.0" grammar="session:any">\n'

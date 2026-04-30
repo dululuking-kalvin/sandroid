@@ -29,13 +29,9 @@ def intra_op_threads() -> int:
     try:
         value = int(raw)
     except ValueError as exc:
-        raise ValueError(
-            f"{INTRA_OP_THREADS_ENV} must be a positive integer, got {raw!r}"
-        ) from exc
+        raise ValueError(f"{INTRA_OP_THREADS_ENV} must be a positive integer, got {raw!r}") from exc
     if value < 1:
-        raise ValueError(
-            f"{INTRA_OP_THREADS_ENV} must be >= 1, got {value}"
-        )
+        raise ValueError(f"{INTRA_OP_THREADS_ENV} must be >= 1, got {value}")
     return value
 
 

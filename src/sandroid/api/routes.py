@@ -61,9 +61,7 @@ def _scene_label(scene_id: str | None, category_path: str | None) -> str:
     return "unknown"
 
 
-def _observe_recognize_result(
-    path: str, scene: str, started_at: float, result: str
-) -> None:
+def _observe_recognize_result(path: str, scene: str, started_at: float, result: str) -> None:
     duration = time.monotonic() - started_at
     recognize_requests_total.labels(path=path, scene=scene, result=result).inc()
     recognize_duration_seconds.labels(path=path).observe(duration)
@@ -201,9 +199,17 @@ class _TurnContext:
     """
 
     __slots__ = (
-        "audio_accum", "audio_overflow", "cancelled", "category_path",
-        "max_audio_bytes", "metric_recorded", "n_best", "queue",
-        "scene_id", "started_at", "task",
+        "audio_accum",
+        "audio_overflow",
+        "cancelled",
+        "category_path",
+        "max_audio_bytes",
+        "metric_recorded",
+        "n_best",
+        "queue",
+        "scene_id",
+        "started_at",
+        "task",
     )
 
     def __init__(
@@ -286,9 +292,7 @@ async def _pump_vad_asr(
 
     ws_active_turns.inc()
     try:
-        return await _pump_vad_asr_inner(
-            websocket, asr, vad, ctx, session_id, turn_id
-        )
+        return await _pump_vad_asr_inner(websocket, asr, vad, ctx, session_id, turn_id)
     finally:
         ws_active_turns.dec()
 
@@ -360,7 +364,12 @@ async def _pump_vad_asr_inner(
     if ctx.cancelled or seg is None or not seg.pcm16:
         return ""
     return await _stream_segment_through_asr(
-        websocket, asr, seg, ctx, session_id, turn_id,
+        websocket,
+        asr,
+        seg,
+        ctx,
+        session_id,
+        turn_id,
     )
 
 
@@ -406,8 +415,11 @@ async def _stream_segment_through_asr(
         if ctx.cancelled:
             return ""
         await _send_error(
-            websocket, session_id, turn_id,
-            "ASR_FAILED", f"ASR backend error: {exc}",
+            websocket,
+            session_id,
+            turn_id,
+            "ASR_FAILED",
+            f"ASR backend error: {exc}",
         )
         ctx.cancelled = True
         return ""
@@ -438,9 +450,7 @@ async def _finalize_turn(
             return
 
         if not final_text.strip():
-            await _send_error(
-                websocket, session_id, turn_id, "NO_SPEECH", "no transcript produced"
-            )
+            await _send_error(websocket, session_id, turn_id, "NO_SPEECH", "no transcript produced")
             result = "no_speech"
             return
 
@@ -486,8 +496,13 @@ class _StreamSession:
     """Owns a single WS connection's turn state machine."""
 
     __slots__ = (
-        "_asr", "_ctx", "_current_turn_id", "_finalize",
-        "_orchestrator", "_session_id", "_vad",
+        "_asr",
+        "_ctx",
+        "_current_turn_id",
+        "_finalize",
+        "_orchestrator",
+        "_session_id",
+        "_vad",
     )
 
     def __init__(
@@ -543,19 +558,29 @@ class _StreamSession:
             return False
         if scene_id is None and category_path is None:
             await _send_error(
-                websocket, new_session_id, new_turn_id,
-                "BAD_START", "either scene_id or category_path is required", fatal=True,
+                websocket,
+                new_session_id,
+                new_turn_id,
+                "BAD_START",
+                "either scene_id or category_path is required",
+                fatal=True,
             )
             return False
         if self._session_id is not None and new_session_id != self._session_id:
             await _send_error(
-                websocket, new_session_id, new_turn_id,
-                "SESSION_MISMATCH", "session_id changed mid-connection", fatal=True,
+                websocket,
+                new_session_id,
+                new_turn_id,
+                "SESSION_MISMATCH",
+                "session_id changed mid-connection",
+                fatal=True,
             )
             return False
         if new_turn_id <= self._current_turn_id:
             await _send_error(
-                websocket, new_session_id, new_turn_id,
+                websocket,
+                new_session_id,
+                new_turn_id,
                 "STALE_TURN",
                 f"turn_id {new_turn_id} is not greater than current {self._current_turn_id}",
             )
@@ -565,14 +590,13 @@ class _StreamSession:
         self._session_id = new_session_id
         self._current_turn_id = new_turn_id
         ctx = _TurnContext(
-            scene_id=scene_id, category_path=category_path,
+            scene_id=scene_id,
+            category_path=category_path,
             n_best=int(control.get("n_best", 5)),
             max_audio_bytes=get_max_audio_bytes(),
         )
         ctx.task = asyncio.create_task(
-            _pump_vad_asr(
-                websocket, self._asr, self._vad, ctx, new_session_id, new_turn_id
-            )
+            _pump_vad_asr(websocket, self._asr, self._vad, ctx, new_session_id, new_turn_id)
         )
         self._ctx = ctx
         self._finalize = asyncio.create_task(

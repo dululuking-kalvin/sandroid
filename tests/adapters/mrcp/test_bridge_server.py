@@ -44,9 +44,7 @@ class _FixedASR:
     def __init__(self, text: str = "hello world") -> None:
         self._text = text
 
-    async def stream(
-        self, chunks: AsyncIterator[AudioChunk]
-    ) -> AsyncIterator[PartialTranscript]:
+    async def stream(self, chunks: AsyncIterator[AudioChunk]) -> AsyncIterator[PartialTranscript]:
         async for _ in chunks:
             pass
         yield PartialTranscript(text=self._text, is_final=True, start_ms=0, end_ms=0)
@@ -268,5 +266,3 @@ async def test_malformed_start_payload_triggers_error() -> None:
             if server._server is not None:
                 server._server.close()
                 await server._server.wait_closed()
-
-

@@ -54,27 +54,21 @@ def _missing(tmp_path: Path) -> str:
 # ---------- SANDROID_ENV=production gate ----------
 
 
-def test_production_missing_asr_raises(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_production_missing_asr_raises(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setenv(ENV_ENV, "production")
     monkeypatch.setenv(ASR_MODEL_PATH_ENV, _missing(tmp_path))
     with pytest.raises(ParaformerError):
         get_asr()
 
 
-def test_production_missing_nlu_raises(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_production_missing_nlu_raises(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setenv(ENV_ENV, "production")
     monkeypatch.setenv(NLU_MODEL_PATH_ENV, _missing(tmp_path))
     with pytest.raises(ONNXEmbedderError):
         get_matcher()
 
 
-def test_production_missing_vad_raises(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_production_missing_vad_raises(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setenv(ENV_ENV, "production")
     monkeypatch.setenv(SILERO_PATH_ENV, _missing(tmp_path))
     with pytest.raises(SileroVADError):
@@ -102,9 +96,7 @@ class _ExplodingASR:
     async def transcribe_file(self, wav_bytes: bytes):  # type: ignore[no-untyped-def]
         raise AssertionError("WS handler should call stream(), not transcribe_file()")
 
-    async def stream(
-        self, chunks: AsyncIterator[AudioChunk]
-    ) -> AsyncIterator[PartialTranscript]:
+    async def stream(self, chunks: AsyncIterator[AudioChunk]) -> AsyncIterator[PartialTranscript]:
         # Emit one partial so the test can prove the generator actually started
         # before the failure — exercises the try/except in _stream_segment.
         yielded = False

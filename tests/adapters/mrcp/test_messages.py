@@ -22,8 +22,7 @@ def test_parse_recognize_request() -> None:
         b"Channel-Identifier: sandroid-sim@speechrecog\r\n"
         b"Content-Type: text/uri-list\r\n"
         b"Content-Length: 19\r\n"
-        b"\r\n"
-        + body
+        b"\r\n" + body
     )
     req = parse_request(raw)
     assert req.method == "RECOGNIZE"

@@ -18,9 +18,10 @@ _HEADER = struct.Struct("!BBHII")
 
 
 def _build_packet(seq: int, ts: int, payload: bytes, payload_type: int = 96) -> bytes:
-    return _HEADER.pack(
-        0b10_0_0_0000, payload_type & 0x7F, seq & 0xFFFF, ts & 0xFFFFFFFF, 0xDEADBEEF
-    ) + payload
+    return (
+        _HEADER.pack(0b10_0_0_0000, payload_type & 0x7F, seq & 0xFFFF, ts & 0xFFFFFFFF, 0xDEADBEEF)
+        + payload
+    )
 
 
 def test_parse_rtp_extracts_payload() -> None:
@@ -35,9 +36,7 @@ def test_parse_rtp_extracts_payload() -> None:
 
 def test_parse_rtp_rejects_wrong_version() -> None:
     # V=1, P=0, X=0, CC=0
-    bad = bytes([0b01_0_0_0000]) + _HEADER.pack(
-        0, 0, 0, 0, 0
-    )[1:]
+    bad = bytes([0b01_0_0_0000]) + _HEADER.pack(0, 0, 0, 0, 0)[1:]
     with pytest.raises(RtpParseError):
         parse_rtp(bad)
 
@@ -48,9 +47,9 @@ def test_parse_rtp_rejects_short_packet() -> None:
 
 
 def test_l16_be_to_pcm16_le_swaps_pairs() -> None:
-    be = b"\x00\x01\xFF\xFE"  # BE: 1, -2
+    be = b"\x00\x01\xff\xfe"  # BE: 1, -2
     le = l16_be_to_pcm16_le(be)
-    assert le == b"\x01\x00\xFE\xFF"
+    assert le == b"\x01\x00\xfe\xff"
 
 
 def test_l16_be_rejects_odd_length() -> None:
@@ -93,6 +92,10 @@ def test_jitter_buffer_flush_drains_remaining() -> None:
 
 def _pkt(seq: int, payload: bytes) -> RtpPacket:
     return RtpPacket(
-        sequence=seq, timestamp=seq * 160, ssrc=0,
-        payload_type=96, marker=False, payload=payload,
+        sequence=seq,
+        timestamp=seq * 160,
+        ssrc=0,
+        payload_type=96,
+        marker=False,
+        payload=payload,
     )

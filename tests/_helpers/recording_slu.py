@@ -29,7 +29,11 @@ class RecordingSLU:
         async for _ in chunks:
             pass
         yield PartialIntent(
-            intent_id=None, confidence=0.0, is_final=True, start_ms=0, end_ms=0,
+            intent_id=None,
+            confidence=0.0,
+            is_final=True,
+            start_ms=0,
+            end_ms=0,
         )
 
     async def recognize_audio(

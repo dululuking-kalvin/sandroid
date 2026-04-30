@@ -80,8 +80,7 @@ def test_load_none_returns_default() -> None:
 def test_load_real_yaml(tmp_path: Path) -> None:
     p = tmp_path / "fusion.yaml"
     p.write_text(
-        "default:\n  w_a: 1.0\n  w_b: 0.0\n"
-        "scenes:\n  bank:\n    w_a: 0.7\n    w_b: 0.3\n",
+        "default:\n  w_a: 1.0\n  w_b: 0.0\nscenes:\n  bank:\n    w_a: 0.7\n    w_b: 0.3\n",
         encoding="utf-8",
     )
     cfg = load_fusion_config(p)

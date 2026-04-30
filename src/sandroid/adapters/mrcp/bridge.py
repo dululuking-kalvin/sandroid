@@ -53,6 +53,7 @@ def _install_traffic_sink(target: str | None) -> None:
         return
     if target in ("stdout", "stderr"):
         import sys  # noqa: PLC0415 — lazy, only when sink is enabled
+
         handler: logging.Handler = logging.StreamHandler(
             sys.stdout if target == "stdout" else sys.stderr
         )
@@ -244,11 +245,7 @@ PLACEHOLDER_INTENT = "PLACEHOLDER_INTENT"
 
 
 def _xml_escape(text: str) -> str:
-    return (
-        text.replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-    )
+    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
 def render_nlsml(
@@ -269,7 +266,7 @@ def render_nlsml(
         '        grammar="session:grammar@sandroid">\n'
         f'  <interpretation confidence="{conf_str}">\n'
         f'    <input mode="speech">{_xml_escape(transcript)}</input>\n'
-        f'    <instance>{_xml_escape(intent_id)}</instance>\n'
+        f"    <instance>{_xml_escape(intent_id)}</instance>\n"
         "  </interpretation>\n"
         "</result>\n"
     ).encode()
@@ -305,6 +302,7 @@ def _resolve_max_audio_bytes() -> int:
     api.deps helper isn't importable on a bare-bridge host."""
     try:
         from sandroid.api.deps import get_max_audio_bytes  # noqa: PLC0415
+
         return get_max_audio_bytes()
     except ImportError:
         return 8 * 1024 * 1024
@@ -447,7 +445,10 @@ class BridgeServer:
         ch.max_audio_bytes = _resolve_max_audio_bytes()
         logger.info(
             "START channel=%s session=%s sr=%d codec=%s",
-            ch.channel_id, ch.session_id, ch.sample_rate, ch.codec,
+            ch.channel_id,
+            ch.session_id,
+            ch.sample_rate,
+            ch.codec,
         )
         ctx.asr_task = asyncio.create_task(self._run_asr(ch))
         return True
@@ -504,7 +505,10 @@ class BridgeServer:
         await writer.drain()
         logger.info(
             "RESULT sent for %s (%d bytes) intent=%s conf=%.2f",
-            ch.channel_id, len(nlsml), intent_id, confidence,
+            ch.channel_id,
+            len(nlsml),
+            intent_id,
+            confidence,
         )
         _emit_traffic(
             {
@@ -517,9 +521,7 @@ class BridgeServer:
                 "confidence": round(confidence, 4),
                 "asr_ms": int((asr_t - eos_t0) * 1000),
                 "nlu_ms": int((nlu_t - asr_t) * 1000),
-                "turn_ms": int((nlu_t - ch.start_monotonic) * 1000)
-                if ch.start_monotonic
-                else None,
+                "turn_ms": int((nlu_t - ch.start_monotonic) * 1000) if ch.start_monotonic else None,
             }
         )
         return True
@@ -536,6 +538,7 @@ class BridgeServer:
             return PLACEHOLDER_INTENT, 0.9
         try:
             from sandroid.core.orchestrator import RecognitionRequest  # noqa: PLC0415
+
             req = RecognitionRequest(
                 scene_id=self._default_scene,
                 text=transcript,
@@ -594,7 +597,9 @@ async def _main() -> None:
     _install_traffic_sink(traffic_sink)
     logger.info(
         "Starting bridge: asr_backend=%s socket=%s default_scene=%s traffic=%s",
-        backend, path, default_scene or "(none, NLU disabled)",
+        backend,
+        path,
+        default_scene or "(none, NLU disabled)",
         traffic_sink or "(disabled)",
     )
     server = BridgeServer(socket_path=path, default_scene=default_scene)

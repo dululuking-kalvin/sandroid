@@ -32,10 +32,7 @@ pytestmark = pytest.mark.skipif(
         and _CMVN_PATH.exists()
         and _FIXTURE_WAV.exists()
     ),
-    reason=(
-        f"ASR model artifacts missing under {_MODELS_DIR}; "
-        "run scripts/fetch_models.py"
-    ),
+    reason=(f"ASR model artifacts missing under {_MODELS_DIR}; run scripts/fetch_models.py"),
 )
 
 

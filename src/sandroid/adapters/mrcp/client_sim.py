@@ -52,11 +52,16 @@ async def recognize_once(
 
     reader, writer = await asyncio.open_connection(host, mrcp_port)
     try:
-        request = _serialize_request(method="RECOGNIZE", request_id=1, headers={
-            "Channel-Identifier": "sandroid-sim@speechrecog",
-            "Content-Type": "text/uri-list",
-            "Content-Length": "23",
-        }, body=b"builtin:dictation\r\n")
+        request = _serialize_request(
+            method="RECOGNIZE",
+            request_id=1,
+            headers={
+                "Channel-Identifier": "sandroid-sim@speechrecog",
+                "Content-Type": "text/uri-list",
+                "Content-Length": "23",
+            },
+            body=b"builtin:dictation\r\n",
+        )
         writer.write(request)
         await writer.drain()
 
@@ -106,9 +111,7 @@ def _serialize_request(
     so the fixture doesn't depend on server internals.
     """
 
-    header_block = b"".join(
-        f"{n}: {v}".encode() + b"\r\n" for n, v in headers.items()
-    )
+    header_block = b"".join(f"{n}: {v}".encode() + b"\r\n" for n, v in headers.items())
     # Build twice to stabilize message-length (see messages._serialize).
     template = b"%s %%d %s %d\r\n" % (MRCP_VERSION, method.encode(), request_id)
     total = len(template % 0 + b"\r\n" + header_block + b"\r\n" + body)
@@ -119,9 +122,7 @@ def _serialize_request(
         total = len(candidate)
 
 
-async def _drain_message_tail(
-    reader: asyncio.StreamReader, start_line: bytes
-) -> bytes:
+async def _drain_message_tail(reader: asyncio.StreamReader, start_line: bytes) -> bytes:
     """Given the start line, read the rest of the message."""
 
     tokens = start_line.strip().split()

@@ -143,6 +143,7 @@ async def test_recognize_with_audio_and_stub_slu_matches_path_a_only() -> None:
         RecognitionRequest(scene_id="example_bank", text="你好", audio=b"\x00" * 320),
     )
     assert fused.top is not None
+    assert a_only.top is not None
     assert fused.top.intent_id == a_only.top.intent_id
     # B abstained (stub) -> fusion is a no-op, A's score passes through.
     assert fused.top.confidence == pytest.approx(a_only.top.confidence)
@@ -160,6 +161,7 @@ async def test_recognize_no_audio_skips_path_b_entirely() -> None:
         RecognitionRequest(scene_id="example_bank", text="你好"),
     )
     assert resp.top is not None
+    assert a_only_resp.top is not None
     # No fusion scaling — confidence matches the matcher's raw score.
     assert resp.top.confidence == pytest.approx(a_only_resp.top.confidence)
 
@@ -178,6 +180,7 @@ async def test_recognize_b_consensus_boosts_confidence() -> None:
         RecognitionRequest(scene_id="example_bank", text="你好", audio=b"\x00" * 320),
     )
     assert fused.top is not None
+    assert a_only_resp.top is not None
     assert fused.top.intent_id == "greeting"
     # 0.5 * conf_A + 0.5 * 0.9 should exceed pure-A scaled by 0.5 alone.
     expected = 0.5 * a_only_resp.top.confidence + 0.5 * 0.9
@@ -228,5 +231,6 @@ async def test_recognize_unconfigured_scene_uses_fusion_default() -> None:
         RecognitionRequest(scene_id="example_bank", text="你好"),
     )
     assert fused.top is not None
+    assert a_only.top is not None
     # w_b=0 means B's vote contributes nothing — same confidence as pure A.
     assert fused.top.confidence == pytest.approx(a_only.top.confidence)

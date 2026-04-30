@@ -49,13 +49,11 @@ class ONNXEmbedderMatcher:
     def __init__(self, model_path: Path, tokenizer_path: Path) -> None:
         if not model_path.exists():
             raise ONNXEmbedderError(
-                f"NLU embedder model missing at {model_path}; "
-                "run scripts/fetch_models.py"
+                f"NLU embedder model missing at {model_path}; run scripts/fetch_models.py"
             )
         if not tokenizer_path.exists():
             raise ONNXEmbedderError(
-                f"NLU tokenizer missing at {tokenizer_path}; "
-                "run scripts/fetch_models.py"
+                f"NLU tokenizer missing at {tokenizer_path}; run scripts/fetch_models.py"
             )
 
         options = ort.SessionOptions()

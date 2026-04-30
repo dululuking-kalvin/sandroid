@@ -67,9 +67,7 @@ def get_max_audio_bytes() -> int:
     try:
         value = int(raw)
     except ValueError as e:
-        raise ValueError(
-            f"{MAX_AUDIO_BYTES_ENV} must be an integer; got {raw!r}"
-        ) from e
+        raise ValueError(f"{MAX_AUDIO_BYTES_ENV} must be an integer; got {raw!r}") from e
     if value <= 0:
         raise ValueError(f"{MAX_AUDIO_BYTES_ENV} must be positive; got {value}")
     return value
@@ -106,9 +104,7 @@ def get_matcher() -> IntentMatcher:
     if backend != "embedder":
         raise ValueError(f"unknown NLU backend {backend!r}; expected 'embedder' or 'stub'")
     model_path = Path(os.environ.get(NLU_MODEL_PATH_ENV, str(DEFAULT_NLU_MODEL_PATH)))
-    tokenizer_path = Path(
-        os.environ.get(NLU_TOKENIZER_PATH_ENV, str(DEFAULT_NLU_TOKENIZER_PATH))
-    )
+    tokenizer_path = Path(os.environ.get(NLU_TOKENIZER_PATH_ENV, str(DEFAULT_NLU_TOKENIZER_PATH)))
     try:
         return ONNXEmbedderMatcher(model_path=model_path, tokenizer_path=tokenizer_path)
     except ONNXEmbedderError:

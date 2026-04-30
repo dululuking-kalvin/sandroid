@@ -73,14 +73,17 @@ def test_stream_accumulates_pcm_and_passes_to_slu(
 
     client = TestClient(app)
     with client.websocket_connect(
-        "/api/v1/recognize/stream", headers=AUTH_HEADERS,
+        "/api/v1/recognize/stream",
+        headers=AUTH_HEADERS,
     ) as ws:
-        ws.send_json({
-            "type": "start",
-            "session_id": "sess-aud-1",
-            "turn_id": 1,
-            "scene_id": "example_bank",
-        })
+        ws.send_json(
+            {
+                "type": "start",
+                "session_id": "sess-aud-1",
+                "turn_id": 1,
+                "scene_id": "example_bank",
+            }
+        )
         for c in chunks:
             ws.send_bytes(c)
         ws.send_json({"type": "stop", "session_id": "sess-aud-1", "turn_id": 1})
@@ -101,14 +104,17 @@ def test_stream_overflow_drops_path_b_but_path_a_completes(
 
     client = TestClient(app)
     with client.websocket_connect(
-        "/api/v1/recognize/stream", headers=AUTH_HEADERS,
+        "/api/v1/recognize/stream",
+        headers=AUTH_HEADERS,
     ) as ws:
-        ws.send_json({
-            "type": "start",
-            "session_id": "sess-aud-2",
-            "turn_id": 1,
-            "scene_id": "example_bank",
-        })
+        ws.send_json(
+            {
+                "type": "start",
+                "session_id": "sess-aud-2",
+                "turn_id": 1,
+                "scene_id": "example_bank",
+            }
+        )
         ws.send_bytes(big)
         ws.send_json({"type": "stop", "session_id": "sess-aud-2", "turn_id": 1})
         messages = _drain_until(ws, {"result", "error"})

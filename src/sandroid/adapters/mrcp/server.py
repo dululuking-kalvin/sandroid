@@ -74,20 +74,30 @@ async def handle_connection(
         return
 
     if request.method != "RECOGNIZE":
-        await _send(writer, serialize_response(MrcpResponse(
-            status_code=405,  # Method Not Allowed — we only do recog in Step 0
-            request_id=request.request_id,
-            request_state="COMPLETE",
-        )))
+        await _send(
+            writer,
+            serialize_response(
+                MrcpResponse(
+                    status_code=405,  # Method Not Allowed — we only do recog in Step 0
+                    request_id=request.request_id,
+                    request_state="COMPLETE",
+                )
+            ),
+        )
         writer.close()
         return
 
     # Ack with IN-PROGRESS immediately; client may start sending RTP now.
-    await _send(writer, serialize_response(MrcpResponse(
-        status_code=200,
-        request_id=request.request_id,
-        request_state="IN-PROGRESS",
-    )))
+    await _send(
+        writer,
+        serialize_response(
+            MrcpResponse(
+                status_code=200,
+                request_id=request.request_id,
+                request_state="IN-PROGRESS",
+            )
+        ),
+    )
 
     rtp_socket = _bind_rtp_socket(config)
     try:
@@ -107,11 +117,16 @@ async def handle_connection(
         return
 
     # Fire START-OF-INPUT once we have any audio — matches UniMRCP timing.
-    await _send(writer, serialize_event(MrcpEvent(
-        event_name="START-OF-INPUT",
-        request_id=request.request_id,
-        request_state="IN-PROGRESS",
-    )))
+    await _send(
+        writer,
+        serialize_event(
+            MrcpEvent(
+                event_name="START-OF-INPUT",
+                request_id=request.request_id,
+                request_state="IN-PROGRESS",
+            )
+        ),
+    )
 
     text, confidence = await _run_asr(asr, pcm_bytes)
     await _emit_complete(writer, request.request_id, text=text, confidence=confidence)
@@ -130,13 +145,18 @@ async def _emit_complete(
         "Completion-Cause": "000 success" if text else "001 no-input-timeout",
         "Content-Type": "application/nlsml+xml",
     }
-    await _send(writer, serialize_event(MrcpEvent(
-        event_name="RECOGNITION-COMPLETE",
-        request_id=request_id,
-        request_state="COMPLETE",
-        headers=headers,
-        body=body,
-    )))
+    await _send(
+        writer,
+        serialize_event(
+            MrcpEvent(
+                event_name="RECOGNITION-COMPLETE",
+                request_id=request_id,
+                request_state="COMPLETE",
+                headers=headers,
+                body=body,
+            )
+        ),
+    )
 
 
 async def _read_request(reader: asyncio.StreamReader) -> MrcpRequest:
@@ -202,9 +222,7 @@ async def _collect_rtp_until_sentinel(
     if sentinel_task in done:
         sentinel_byte = sentinel_task.result()
         if sentinel_byte != _END_OF_INPUT_SENTINEL:
-            logger.warning(
-                "mrcp.unexpected_sentinel", extra={"byte": repr(sentinel_byte)}
-            )
+            logger.warning("mrcp.unexpected_sentinel", extra={"byte": repr(sentinel_byte)})
         for payload in jitter.flush():
             pcm.extend(l16_be_to_pcm16_le(payload))
     return bytes(pcm)
@@ -248,9 +266,7 @@ async def start_server(
 
     cfg = config or MrcpServerConfig()
 
-    async def _handler(
-        reader: asyncio.StreamReader, writer: asyncio.StreamWriter
-    ) -> None:
+    async def _handler(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         await handle_connection(reader, writer, asr=asr, config=cfg)
 
     return await asyncio.start_server(_handler, cfg.host, cfg.mrcp_port)

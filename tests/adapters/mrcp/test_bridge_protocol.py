@@ -74,7 +74,7 @@ def test_cbor_encode_decode_map_roundtrip() -> None:
 
 def test_cbor_encode_uint_boundaries() -> None:
     # value 23 (fits in additional info directly)
-    m = {"x": 23}
+    m: dict[str, object] = {"x": 23}
     dec, _ = _cbor_decode(_cbor_encode_map(m))
     assert dec == {"x": 23}
     # value 255 (ai=24, 1-byte)

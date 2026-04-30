@@ -98,10 +98,7 @@ def load_fusion_config(path: Path | str | None) -> FusionConfig:
     scenes_block = raw.get("scenes") or {}
     return FusionConfig(
         default=FusionWeights(**default_block),
-        scenes={
-            name: FusionWeights(**weights)
-            for name, weights in scenes_block.items()
-        },
+        scenes={name: FusionWeights(**weights) for name, weights in scenes_block.items()},
     )
 
 
@@ -150,8 +147,6 @@ def fuse(
 
     ranked = sorted(scores.items(), key=lambda kv: (-kv[1], kv[0]))
     fused = [
-        MatchCandidate(intent_id=iid, confidence=score)
-        for iid, score in ranked
-        if score > 0.0
+        MatchCandidate(intent_id=iid, confidence=score) for iid, score in ranked if score > 0.0
     ]
     return fused[:n_best]

@@ -199,17 +199,11 @@ class ParaformerASR:
         try:
             with wave.open(io.BytesIO(wav_bytes), "rb") as w:
                 if w.getnchannels() != 1:
-                    raise ParaformerError(
-                        f"expected mono WAV, got {w.getnchannels()} channels"
-                    )
+                    raise ParaformerError(f"expected mono WAV, got {w.getnchannels()} channels")
                 if w.getsampwidth() != 2:
-                    raise ParaformerError(
-                        f"expected 16-bit PCM, got {w.getsampwidth() * 8}-bit"
-                    )
+                    raise ParaformerError(f"expected 16-bit PCM, got {w.getsampwidth() * 8}-bit")
                 if w.getframerate() != _SAMPLE_RATE:
-                    raise ParaformerError(
-                        f"expected {_SAMPLE_RATE} Hz, got {w.getframerate()} Hz"
-                    )
+                    raise ParaformerError(f"expected {_SAMPLE_RATE} Hz, got {w.getframerate()} Hz")
                 frames = w.readframes(w.getnframes())
         except wave.Error as exc:
             raise ParaformerError(f"failed to parse WAV: {exc}") from exc
@@ -251,8 +245,6 @@ class ParaformerASR:
             )
         ids = logits[0].argmax(axis=-1).tolist()
         pieces = [
-            self._tokens[i]
-            for i in ids
-            if i not in (_BLANK_ID, _EOS_ID) and i in self._tokens
+            self._tokens[i] for i in ids if i not in (_BLANK_ID, _EOS_ID) and i in self._tokens
         ]
         return "".join(pieces)

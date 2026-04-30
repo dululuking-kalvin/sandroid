@@ -12,7 +12,7 @@ import asyncio
 import os
 import sys
 import tempfile
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 
 import pytest
 
@@ -49,15 +49,13 @@ class _FixedASR:
     def __init__(self, text: str = "hello world") -> None:
         self._text = text
 
-    async def stream(
-        self, chunks: AsyncIterator[AudioChunk]
-    ) -> AsyncIterator[PartialTranscript]:
+    async def stream(self, chunks: AsyncIterator[AudioChunk]) -> AsyncIterator[PartialTranscript]:
         async for _ in chunks:
             pass
         yield PartialTranscript(text=self._text, is_final=True, start_ms=0, end_ms=0)
 
 
-def _orch_factory_with(rec: RecordingSLU):
+def _orch_factory_with(rec: RecordingSLU) -> Callable[[], Orchestrator]:
     def _make() -> Orchestrator:
         return Orchestrator(
             registry=get_registry(),
@@ -65,6 +63,7 @@ def _orch_factory_with(rec: RecordingSLU):
             matcher=get_matcher(),
             slu=rec,
         )
+
     return _make
 
 
@@ -87,12 +86,14 @@ async def _drive_turn(
     """Open one channel, send START + AUDIO*N + EOS, return the RESULT frame."""
     reader, writer = await asyncio.open_unix_connection(path=sock)  # type: ignore[attr-defined]
     try:
-        start_payload = _cbor_encode_map({
-            "channel_id": "c1",
-            "session_id": "s1",
-            "sample_rate": 16000,
-            "codec": "LPCM",
-        })
+        start_payload = _cbor_encode_map(
+            {
+                "channel_id": "c1",
+                "session_id": "s1",
+                "sample_rate": 16000,
+                "codec": "LPCM",
+            }
+        )
         writer.write(encode_frame(FRAME_START, start_payload))
         for chunk in audio_chunks:
             writer.write(encode_frame(FRAME_AUDIO, chunk))

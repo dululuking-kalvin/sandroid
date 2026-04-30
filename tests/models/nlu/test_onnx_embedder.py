@@ -20,10 +20,7 @@ _TOKENIZER_PATH = _MODELS_DIR / "nlu_tokenizer.json"
 
 pytestmark = pytest.mark.skipif(
     not (_MODEL_PATH.exists() and _TOKENIZER_PATH.exists()),
-    reason=(
-        f"NLU model artifacts missing under {_MODELS_DIR}; "
-        "run scripts/fetch_models.py"
-    ),
+    reason=(f"NLU model artifacts missing under {_MODELS_DIR}; run scripts/fetch_models.py"),
 )
 
 
