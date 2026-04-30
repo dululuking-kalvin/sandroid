@@ -92,7 +92,7 @@ async def _start_server(
 
 
 async def _connect(path: str) -> tuple[asyncio.StreamReader, asyncio.StreamWriter]:
-    return await asyncio.open_unix_connection(path=path)  # type: ignore[attr-defined]
+    return await asyncio.open_unix_connection(path=path)  # type: ignore[attr-defined,unused-ignore]
 
 
 async def test_full_recognition_flow() -> None:

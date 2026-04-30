@@ -84,7 +84,7 @@ async def _drive_turn(
     audio_chunks: list[bytes],
 ) -> tuple[int, bytes]:
     """Open one channel, send START + AUDIO*N + EOS, return the RESULT frame."""
-    reader, writer = await asyncio.open_unix_connection(path=sock)  # type: ignore[attr-defined]
+    reader, writer = await asyncio.open_unix_connection(path=sock)  # type: ignore[attr-defined,unused-ignore]
     try:
         start_payload = _cbor_encode_map(
             {
